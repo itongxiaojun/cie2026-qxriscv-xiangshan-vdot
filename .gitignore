@@ -20,6 +20,7 @@ out/
 .DS_Store
 
 # 例外：阶段证据（日志与波形）需随仓库提交
+!docs/phase1/logs/*.log
 !docs/phase2/logs/*.log
 !docs/phase2/waveform/*.vcd
 !docs/phase3/*.log
@@ -35,3 +36,6 @@ __pycache__/
 env.sh.local
 .gtkwave-pkg/
 .screenshots/
+
+# 外部参考代码（仅本地参考，不纳入版本控制）
+openTPU-main/
