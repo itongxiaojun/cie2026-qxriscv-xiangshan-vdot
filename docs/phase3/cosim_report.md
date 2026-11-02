@@ -15,7 +15,7 @@
 | 量化"有/无该指令"的代价差 | 用纯 RVV 1.0 组合序列实现同语义基线，在 NEMU 上跑通并计数 | 数据通路指令 6→1；单用例核心指令 14→7 |
 | 给出实测性能口径 | Verilator 单元测试台统计延迟/吞吐 | 延迟 3 cycle，吞吐 1 inst/cycle |
 
-**不在范围**：香山昆明湖 V2 平台上的真实周期数与加速比（受阻塞 B1/B2/B3 限制，尚未取得平台运行环境）。
+**不在范围**：香山昆明湖 V2 平台上的真实周期数与加速比（B1 已关闭，B2 集成与 B3 测量尚未执行）。
 
 ---
 
@@ -24,7 +24,7 @@
 - NEMU：XiangShan 版，基线 commit `a683e0b`
 - VLEN=128；`CONFIG_RVV=y`、`CONFIG_RVV_AGNOSTIC=y`
 - 解释器：`.tools/nemu/build/riscv64-nemu-interpreter`
-- 本环境无 RISC-V 交叉工具链，测试镜像由纯 Python 手写汇编器生成（`tests/as/mini_asm.py`）
+- 测试镜像由纯 Python 手写汇编器生成（`tests/as/mini_asm.py`）；阶段一迁移后 RISC-V 交叉工具链已可用（`.tools/riscv`），此处保留原生成方式以保证镜像与历史结果可复现
 
 ```bash
 # 1) NEMU 单指令自测 + 金标准比对（同时导出 tb 用子集）
@@ -36,6 +36,8 @@ python3 tests/run_nemu_cosim.py --rtl-export docs/phase3/02_rtl_export.txt
 # 4) 基线（RVV 组合）等价性 + 指令数对比
 python3 tests/run_nemu_baseline.py
 ```
+
+> **2026-11-01 迁移后复跑**：工作区迁至 `/home/dbqxxs/xsriscv/cieriscv`，`bash scripts/run_all.sh` 输出 `ALL : PASS`；NEMU 1513/1513、RTL↔NEMU `mismatch=0`、基线 `alu_op_ratio 6.0x`，与初版一致。NEMU 源码/构建产物（`.tools/nemu`，commit `a683e0b` + 补丁）随工作区迁移仍可用。
 
 ---
 

@@ -51,6 +51,7 @@
 ## 3. 综合评估（generic）
 
 - 工具：Yosys 0.52（Debian 包本地解包运行，未安装、未改系统）
+- **当前环境（2026-11-01 迁移后）未安装 yosys**：本节数据来自历史日志 `01_yosys_synth.log`，可审阅但**不可在本机复跑**；复跑需先提供 yosys 0.52+。
 - 流程：`read_verilog -sv` → `synth -top VDot -noabc` → `techmap` → `opt` → `ltp -noff` → `stat`
 - 说明：`abc` 二进制缺失，故以 `techmap/simplemap` 映射到 2 输入通用门；结果比 ABC 优化后保守。
 
@@ -146,12 +147,12 @@ FF 结构上限为 187 bit（`s1_prod` 128 + 控制 4 + `s2_sum` 20 + 输出 32 
 
 | 编号 | 项 | 状态 |
 |---|---|---|
-| B1 | `xs-env` + RISC-V 工具链 | **仍阻塞**（阶段一、香山内集成无法启动） |
-| B2 | 香山内集成与回归 | **仍阻塞**（依赖 B1） |
-| B3 | 平台真实加速比 | **仍阻塞**（仅有模型 + 指令级数据） |
+| B1 | `xs-env` + RISC-V 工具链 | **已关闭（2026-11-01）**：`.tools/` 手工等价部署 + 香山 `16ae9dd` 的 emu 已构建，阶段一 hello/vadd 波形已入库 |
+| B2 | 香山内集成与回归 | **待实施**（环境已就绪，依赖的 B1 已关闭） |
+| B3 | 平台真实加速比 | **待实施**（需先完成 B2；现有模型 + 指令级数据） |
 | B4 | PDK 面积与时序签核 | **部分关闭**：generic 规模/深度已取得；µm² 与 ns 仍需 PDK 库与 DC/Genus |
 
-> 对外表述约束不变：B1/B2/B3 关闭前，不得宣称"已在香山平台验证"，不得给出实测加速比。
+> 对外表述约束不变：B2/B3 关闭前，不得宣称"`vdot` 已在香山平台验证"，不得给出实测加速比。
 
 ---
 
@@ -184,3 +185,23 @@ python3 tests/run_nemu_baseline.py
 # 5) generic 综合（需 yosys；本环境为 deb 本地解包，见 §3）
 yosys -p "read_verilog -sv rtl/verilog/VDot.v; synth -top VDot -noabc; techmap; opt; ltp -noff; stat"
 ```
+
+---
+
+## 9. 环境迁移后的复现状态（2026-11-01）
+
+工作区已迁至 `/home/dbqxxs/xsriscv/cieriscv`。按"哪些证据能复跑"重新核对：
+
+| 项 | 当前状态 | 说明 |
+|---|---|---|
+| 单元回归 1518 条 | **可复跑，PASS** | 1518/1518、3 cycle、1 inst/cycle、`total_cycles 10148` |
+| 严格 lint | **可复跑，PASS** | 0 告警 0 错误 |
+| NEMU 自测 + RTL↔NEMU | **可复跑，PASS** | 1513 vs 1513，`mismatch=0` |
+| RVV 组合基线 | **可复跑，PASS** | 1513/1513，`alu_op_ratio 6.0x` |
+| 一键回归 | **可复跑，PASS** | `bash scripts/run_all.sh` → `ALL : PASS` |
+| generic 综合（§3） | **不可复跑** | 当前环境无 yosys；数据引用历史日志 `01_yosys_synth.log` |
+| 香山平台实测（§7 B2–B3） | **待实施** | 环境已就绪（香山 `16ae9dd` 的 emu 已构建）；需先完成 `vdot` 集成（B2）再测量 |
+
+迁移暴露并已修复的缺陷：`build/obj_dir` 内的旧 Makefile 写死旧工作区绝对路径，导致 `make` 报"没有规则可制作目标"；`scripts/build_sim.sh` 已增加陈旧构建目录自动清理（路径不符即重建）。
+
+> 上述复跑不改变 §3 的综合数字与 §5 的模型口径：它们仍是"历史证据 + 结构推演"，不是当前环境的重新测量。

@@ -20,6 +20,14 @@ echo "[build] VERILATOR = $VERILATOR"
 
 mkdir -p "$ROOT/build"
 
+# 构建产物会写死生成时的绝对路径。若工作区被移动/迁移，旧的 obj_dir 会导致
+# make 找不到源文件（stat: ... 权限不够 / 没有规则可制作目标）。检测到路径不符即清理重建。
+if [ -d "$ROOT/build/obj_dir" ] && ! grep -q "$ROOT/tests/tb/tb_vdot.cpp" \
+      "$ROOT/build/obj_dir/VVDot.mk" 2>/dev/null; then
+  echo "[build] 检测到陈旧构建产物（指向其它工作目录），清理后重建"
+  rm -rf "$ROOT/build/obj_dir"
+fi
+
 "$VERILATOR" --cc --exe --build -j "$(nproc)" --assert --trace \
   --top-module VDot \
   -Mdir "$ROOT/build/obj_dir" \

@@ -5,9 +5,9 @@
 | 团队 | qxriscv |
 | 目标平台 | 香山（XiangShan）昆明湖 V2，VLEN=128 |
 | 交付物对应 | 阶段二 2.1「vdot.vv 设计文档」 |
-| 规范性上游 | [ipd/01 指令与微架构设计规格书](file:///mnt/hdata/qxriscv/cieriscv/ipd/01_vdot指令与微架构设计规格书.md)（需求条目、ADR、开放问题） |
-| 实现 | [rtl/verilog/VDot.v](file:///mnt/hdata/qxriscv/cieriscv/rtl/verilog/VDot.v)（已验证）、[rtl/chisel/VDot.scala](file:///mnt/hdata/qxriscv/cieriscv/rtl/chisel/VDot.scala)（集成用，未编译校验） |
-| 验证结论 | [阶段二测试报告](file:///mnt/hdata/qxriscv/cieriscv/docs/phase2/test_report.md)：1518/1518 PASS，延迟 3 cycle，吞吐 1 inst/cycle |
+| 规范性上游 | [ipd/01 指令与微架构设计规格书](file:///home/dbqxxs/xsriscv/cieriscv/ipd/01_vdot指令与微架构设计规格书.md)（需求条目、ADR、开放问题） |
+| 实现 | [rtl/verilog/VDot.v](file:///home/dbqxxs/xsriscv/cieriscv/rtl/verilog/VDot.v)（已验证）、[rtl/chisel/VDot.scala](file:///home/dbqxxs/xsriscv/cieriscv/rtl/chisel/VDot.scala)（集成用，未编译校验） |
+| 验证结论 | [阶段二测试报告](file:///home/dbqxxs/xsriscv/cieriscv/docs/phase2/test_report.md)：1518/1518 PASS，延迟 3 cycle，吞吐 1 inst/cycle |
 | 文档版本 | v1.1（2026-10-28，对齐阶段四 RTL 收口后的行号、信号与综合结果） |
 
 ---
@@ -178,19 +178,21 @@ def vdot_vv(vd, vs1, vs2):
 
 | 功能块 | 位置 | 说明 |
 |---|---|---|
-| 参数自检 | [VDot.v#L45-L50](file:///mnt/hdata/qxriscv/cieriscv/rtl/verilog/VDot.v#L45-L50) | `K`/`ACC_W`/`OUT_W` 越界即 `$fatal` |
-| 合法性判定 | [VDot.v#L52-L56](file:///mnt/hdata/qxriscv/cieriscv/rtl/verilog/VDot.v#L52-L56) | 仅支持 `vm=1 / e8 / m1` |
-| 8 路乘法 | [VDot.v#L58-L72](file:///mnt/hdata/qxriscv/cieriscv/rtl/verilog/VDot.v#L58-L72) | `generate` 展开 8 个 `8×8` 有符号乘 |
-| EX1→EX2 流水寄存器 | [VDot.v#L74-L92](file:///mnt/hdata/qxriscv/cieriscv/rtl/verilog/VDot.v#L74-L92) | 保存 8 个乘积与控制位（`s1_illegal/s1_write`） |
-| EX2 加法树 | [VDot.v#L95-L119](file:///mnt/hdata/qxriscv/cieriscv/rtl/verilog/VDot.v#L95-L119) | 8→4→2→1，常数索引展开，20 bit |
-| EX2→WB 流水寄存器 | [VDot.v#L121-L131](file:///mnt/hdata/qxriscv/cieriscv/rtl/verilog/VDot.v#L121-L131) | 保存和与控制位（`s2_illegal/s2_write`） |
-| 写回格式化 | [VDot.v#L133-L152](file:///mnt/hdata/qxriscv/cieriscv/rtl/verilog/VDot.v#L133-L152) | 符号扩展 + 96 bit 尾零 |
-| 仿真断言 | [VDot.v#L154-L169](file:///mnt/hdata/qxriscv/cieriscv/rtl/verilog/VDot.v#L154-L169) | 高位清零、valid/illegal 互斥、dirty 伴随 valid |
+| 参数自检 | [VDot.v#L45-L50](file:///home/dbqxxs/xsriscv/cieriscv/rtl/verilog/VDot.v#L45-L50) | `K`/`ACC_W`/`OUT_W` 越界即 `$fatal` |
+| 合法性判定 | [VDot.v#L52-L56](file:///home/dbqxxs/xsriscv/cieriscv/rtl/verilog/VDot.v#L52-L56) | 仅支持 `vm=1 / e8 / m1` |
+| 8 路乘法 | [VDot.v#L58-L72](file:///home/dbqxxs/xsriscv/cieriscv/rtl/verilog/VDot.v#L58-L72) | `generate` 展开 8 个 `8×8` 有符号乘 |
+| EX1→EX2 流水寄存器 | [VDot.v#L74-L92](file:///home/dbqxxs/xsriscv/cieriscv/rtl/verilog/VDot.v#L74-L92) | 保存 8 个乘积与控制位（`s1_illegal/s1_write`） |
+| EX2 加法树 | [VDot.v#L95-L119](file:///home/dbqxxs/xsriscv/cieriscv/rtl/verilog/VDot.v#L95-L119) | 8→4→2→1，常数索引展开，20 bit |
+| EX2→WB 流水寄存器 | [VDot.v#L121-L131](file:///home/dbqxxs/xsriscv/cieriscv/rtl/verilog/VDot.v#L121-L131) | 保存和与控制位（`s2_illegal/s2_write`） |
+| 写回格式化 | [VDot.v#L133-L152](file:///home/dbqxxs/xsriscv/cieriscv/rtl/verilog/VDot.v#L133-L152) | 符号扩展 + 96 bit 尾零 |
+| 仿真断言 | [VDot.v#L154-L169](file:///home/dbqxxs/xsriscv/cieriscv/rtl/verilog/VDot.v#L154-L169) | 高位清零、valid/illegal 互斥、dirty 伴随 valid |
 
 两点实现说明：
 
 1. **加法树采用常数索引显式展开**，而非二维数组动态索引。原因：后者在 Verilator 中触发 `UNOPTFLAT`（工具无法判定元素级依赖），改写后告警消失，同时更接近可综合写法（缺陷记录 D-01）。
 2. **乘法器不在两级间复用**：8 个乘法器为 EX1 专用，EX2 只做加法与格式化。这是"3 周期、1 条/周期"吞吐的直接来源。面积代价为 8 个小乘法器 + 7 个 20 bit 加法器 + 172 bit 流水寄存器；generic 综合实测 4186 单元、172 个触发器、最长寄存器到寄存器路径 25 级，按 2 输入 NAND 等效口径约 **5.3k–8.4k GE（中值 ≈6.9k）**，证据见 [阶段四发布报告](../phase4/release_report.md) §3 与 `docs/phase4/01_yosys_synth.log`（该口径为工艺无关综合，非 PDK µm² 签核值）。
+
+> 环境注记（2026-11-01）：当前工作区已迁移，主机**未安装 yosys**，上述综合数字为迁移前的历史证据，暂不可在本机复跑；功能与时序结论（1518/1518、3 cycle）已在新环境复跑确认。
 
 ### 4.3 Chisel 版本
 
@@ -204,7 +206,7 @@ def vdot_vv(vd, vs1, vs2):
 
 ## 5. 与香山昆明湖 V2 的集成方案
 
-完整步骤、代码骨架与逐项核对清单见 [香山集成说明](file:///mnt/hdata/qxriscv/cieriscv/patches/xiangshan-vdot-integration.md)。要点：
+完整步骤、代码骨架与逐项核对清单见 [香山集成说明](file:///home/dbqxxs/xsriscv/cieriscv/patches/xiangshan-vdot-integration.md)。要点：
 
 | # | 集成环节 | 动作 |
 |---|---|---|
@@ -218,7 +220,7 @@ def vdot_vv(vd, vs1, vs2):
 
 **集成原则**：只做加法（新增文件 + 少量注册点），每完成一个环节跑一次既有向量冒烟测试，确保零回归。
 
-> **状态声明**：上述集成**尚未在香山源码上执行**（当前环境无 `xs-env` 与工具链）。本设计文档中的"已验证"仅指模块级 RTL 仿真，不代表已在昆明湖 V2 上跑通。
+> **状态声明**：上述集成**尚未在香山源码上执行**（香山源码与工具链已就绪，集成待实施）。本设计文档中的"已验证"仅指模块级 RTL 仿真，不代表已在昆明湖 V2 上跑通。
 
 ---
 
@@ -241,8 +243,8 @@ def vdot_vv(vd, vs1, vs2):
 
 | # | 项 | 状态 | 处理 |
 |---|---|---|---|
-| U-01 | 香山集成与仿真 | 未执行（无 `xs-env`） | 环境就绪后按集成说明执行，需重跑回归 |
-| U-02 | 汇编级测试（emu） | 未执行（无 RISC-V 工具链） | 复用同一向量集 |
+| U-01 | 香山集成与仿真 | 未执行（源码已就绪，集成待实施） | 按集成说明执行并重跑回归 |
+| U-02 | 汇编级测试（emu） | 未执行（`vadd.S` 已跑通，`vdot` 汇编用例待集成后补） | 复用同一向量集 |
 | U-03 | NEMU 扩展与 difftest | **已完成**（阶段三 T3.1–T3.4） | 见 `docs/phase3/cosim_report.md`，1513/1513，RTL↔NEMU 0 mismatch |
 | U-04 | 真实加速比 | 仅有解析估算 | 见 `docs/phase3/perf_analysis.md`，明确标注估算 |
 | U-05 | 综合面积/时序 | **部分关闭**（阶段四 T4.2/T4.3） | generic 综合已取得：4186 单元 / 172 FF / 25 级 R2R / ≈5.3k–8.4k GE，见 `docs/phase4/01_yosys_synth.log`；PDK 映射后的 µm²、ns 签核仍待做 |

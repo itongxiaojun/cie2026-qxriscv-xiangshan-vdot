@@ -1,0 +1,58 @@
+阶段一 · 1.3 波形解析与绘图日志
+生成时间：2026-11-01 23:54:04  主机：debian
+脚本：scripts/plot_phase1_wave.py（仓库内，可复跑）
+VCD ：/tmp/vadd_wave_r2.vcd（由 03_vadd_run.log 的 --dump-wave 命令生成）
+文件大小：100664602 B
+============================================================================
+
+$ cd /home/dbqxxs/xsriscv/cieriscv
+$ python3 scripts/plot_phase1_wave.py /tmp/vadd_wave_r2.vcd
+
+VCD      : /tmp/vadd_wave_r2.vcd (100664602 B)
+窗口     : 8200 – 8360 cycle
+[1] VCD 头解析：命中 19 / 19 个目标信号
+
+逻辑名           位宽   窗口变化   完整层次路径
+fetch_valid   1    10       l_soc > core_with_l2 > core > frontend > inner_ibuffer > outputEntries_0_valid
+fetch_pc      50   16       l_soc > core_with_l2 > core > frontend > inner_ibuffer > outputEntries_0_bits_pc
+fetch_inst    32   16       l_soc > core_with_l2 > core > frontend > inner_ibuffer > outputEntries_0_bits_inst
+dec_valid     1    10       l_soc > core_with_l2 > core > backend > inner_ctrlBlock > decodePipeRenameModule > io_in_valid
+dec_pc        50   18       l_soc > core_with_l2 > core > backend > inner_ctrlBlock > decodePipeRenameModule > io_in_bits_pc
+dec_inst      32   18       l_soc > core_with_l2 > core > backend > inner_ctrlBlock > decodePipeRenameModule > io_in_bits_instr
+vialu_in      1    3        l_soc > core_with_l2 > core > backend > inner_vfExuBlock > exus_2 > VialuFix > io_in_valid
+vialu_out     1    3        l_soc > core_with_l2 > core > backend > inner_vfExuBlock > exus_2 > VialuFix > io_out_valid
+vialu_op      9    2        l_soc > core_with_l2 > core > backend > inner_vfExuBlock > exus_2 > VialuFix > io_in_bits_ctrl_fuOpType
+vialu_vsew    2    1        l_soc > core_with_l2 > core > backend > inner_vfExuBlock > exus_2 > VialuFix > io_in_bits_ctrl_vpu_vsew
+vldu0_v       1    3        l_soc > core_with_l2 > core > memBlock > io_mem_to_ooo_writebackVldu_0_valid
+vldu1_v       1    5        l_soc > core_with_l2 > core > memBlock > io_mem_to_ooo_writebackVldu_1_valid
+vldu0_d       128  3        l_soc > core_with_l2 > core > memBlock > io_mem_to_ooo_writebackVldu_0_bits_data
+vldu1_d       128  4        l_soc > core_with_l2 > core > memBlock > io_mem_to_ooo_writebackVldu_1_bits_data
+st_in_v       1    3        l_soc > core_with_l2 > core > memBlock > inner_StoreUnit_1 > io_vecstin_valid
+st_dc_v       1    3        l_soc > core_with_l2 > core > memBlock > inner_StoreUnit_1 > io_dcache_req_valid
+st_s3_v       1    3        l_soc > core_with_l2 > core > memBlock > inner_StoreUnit_1 > s3_valid
+st_out_v      1    3        l_soc > core_with_l2 > core > memBlock > inner_StoreUnit_1 > io_vecstout_valid
+st_vaddr      64   2        l_soc > core_with_l2 > core > memBlock > inner_StoreUnit_1 > io_vecstout_bits_vaddr
+
+[2] 关键事件（cycle: 值），窗口 8200–8360
+
+  取指 valid 上升沿 : [8246, 8280, 8290, 8299, 8308]
+  译码 valid 上升沿 : [8246, 8280, 8282, 8290, 8299]
+  执行 io_in_valid  : [8323]
+  执行 io_out_valid : [8324]
+  加载写回 Vldu_0/1 : [8317] [8317, 8339]
+  存储 vecstin      : [8332]
+  存储 dcache_req   : [8332]
+  存储 s3_valid     : [8335]
+  存储 vecstout     : [8336]
+
+  fetch_pc   变化点: 8200:0x0, 8246:0x80000000, 8247:0x80000016, 8248:0x80000022, 8249:0x80000038, 8268:0x0, 8274:0x80000016, 8280:0x8000000a, 8281:0x80000022, 8282:0x8000002a, 8284:0x80000036, 8290:0x8000003c ...
+  fetch_inst 变化点: 8200:0x0, 8246:0x22b7, 8247:0x3e58593, 8248:0xc0072d7, 8249:0x5006b, 8268:0x0, 8274:0x3e58593, 8280:0x517, 8281:0xc0072d7, 8282:0x2058107, 8284:0x513, 8290:0x6f ...
+  dec_pc     变化点: 8200:0x0, 8246:0x80000000, 8247:0x80000016, 8248:0x80000022, 8249:0x80000026, 8267:0x80000038, 8268:0x0, 8274:0x80000016, 8280:0x8000000a, 8281:0x80000022, 8283:0x80000026, 8284:0x8000002a ...
+  dec_inst   变化点: 8200:0x0, 8246:0x22b7, 8247:0x3e58593, 8248:0xc0072d7, 8249:0x2050087, 8267:0x5006b, 8268:0x0, 8274:0x3e58593, 8280:0x517, 8281:0xc0072d7, 8283:0x2050087, 8284:0x2058107 ...
+  vialu_op   变化点: 8200:0x10b, 8323:0x40
+  vialu_vsew 变化点: 8200:0x0
+  st_vaddr   变化点: 8200:0x9b93d5a84fd2305b, 8336:0x80000060
+
+[3] 已写出：/home/dbqxxs/xsriscv/cieriscv/docs/phase1/wave/vadd_pipeline_wave.png (377380 B)
+
+EXIT=0

@@ -1,12 +1,12 @@
 # 香山昆明湖 V2 集成说明（VDot / vdot.vv）
 
 > **状态：未执行（UNVERIFIED）**
-> 本文是集成**操作规程**，不是"已完成集成"的记录。当前工作区没有 `xs-env`、香山源码与 RISC-V 工具链，因此：
+> 本文是集成**操作规程**，不是"已完成集成"的记录。当前工作区已检出香山源码（`build/xs-work/XiangShan` @ `16ae9dd`）、具备 RISC-V 工具链与 emu（阶段一已闭环），但**集成本身尚未执行**，因此：
 > - 文中所有文件路径、类名、方法名均为**按香山通用结构的推断**，必须用文中给出的 grep 命令逐一核实后回填；
 > - 任何一条都不得在未核实的情况下直接粘贴进源码；
-> - 集成完成后必须重跑既有向量回归，确认零回归，并把结果补进 [阶段二测试报告](file:///mnt/hdata/qxriscv/cieriscv/docs/phase2/test_report.md)（替换 U-01）。
+> - 集成完成后必须重跑既有向量回归，确认零回归，并把结果补进 [阶段二测试报告](file:///home/dbqxxs/xsriscv/cieriscv/docs/phase2/test_report.md)（替换 U-01）。
 >
-> 已冻结、可直接复用的部分是数据通路本身：[rtl/verilog/VDot.v](file:///mnt/hdata/qxriscv/cieriscv/rtl/verilog/VDot.v)（已验证）与 [rtl/chisel/VDot.scala](file:///mnt/hdata/qxriscv/cieriscv/rtl/chisel/VDot.scala)（同语义骨架，未编译）。
+> 已冻结、可直接复用的部分是数据通路本身：[rtl/verilog/VDot.v](file:///home/dbqxxs/xsriscv/cieriscv/rtl/verilog/VDot.v)（已验证）与 [rtl/chisel/VDot.scala](file:///home/dbqxxs/xsriscv/cieriscv/rtl/chisel/VDot.scala)（同语义骨架，未编译）。
 
 ---
 

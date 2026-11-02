@@ -3,10 +3,10 @@
 | 项目 | 内容 |
 |---|---|
 | 被测对象 | `rtl/verilog/VDot.v`（VLEN=128, K=8, ACC_W=20, OUT_W=32） |
-| 对应规格 | [ipd/01 设计规格书](file:///mnt/hdata/qxriscv/cieriscv/ipd/01_vdot指令与微架构设计规格书.md) |
-| 测试方案 | [ipd/02 测试与验证方案](file:///mnt/hdata/qxriscv/cieriscv/ipd/02_测试与验证方案.md) |
-| 报告版本 | v1.0 |
-| 执行日期 | 2026-10-27 |
+| 对应规格 | [ipd/01 设计规格书](file:///home/dbqxxs/xsriscv/cieriscv/ipd/01_vdot指令与微架构设计规格书.md) |
+| 测试方案 | [ipd/02 测试与验证方案](file:///home/dbqxxs/xsriscv/cieriscv/ipd/02_测试与验证方案.md) |
+| 报告版本 | v1.1（2026-11-01 在当前环境复跑确认） |
+| 执行日期 | 2026-10-27（初版）；2026-11-01（迁移后复跑，结果一致） |
 | 执行人 | B（验证） |
 | **总体结论** | **PASS** —— 1518/1518 用例通过，0 失败；单条延迟 3 cycle，吞吐 1 inst/cycle |
 
@@ -44,7 +44,9 @@
 | 版本控制 | git，被测 RTL commit 见仓库提交记录 |
 | 波形 | `docs/phase2/waveform/vdot_unit.vcd`（前 400 周期，GTKWave 可打开） |
 
-**环境说明**：当前主机无 `xs-env` / Verilator 预装 / RISC-V 工具链，因此采用"从源码构建 Verilator + 模块级 C++ 测试台"的方式完成可执行的 RTL 仿真；这保证了本报告数据来自**真实 RTL 仿真**而非行为模型。
+**环境说明**：阶段二执行时主机无 Verilator 预装与 RISC-V 工具链，因此采用"从源码构建 Verilator + 模块级 C++ 测试台"的方式完成可执行的 RTL 仿真；这保证了本报告数据来自**真实 RTL 仿真**而非行为模型。2026-11-01 环境迁移后 Verilator 5.034 可用，单元回归可复跑（1518/1518 PASS）。
+
+> **2026-11-01 迁移后复跑**：工作区迁至 `/home/dbqxxs/xsriscv/cieriscv`，重新执行 `bash scripts/run_unit_tests.sh`，结果与初版一致：1518/1518 PASS、延迟 3 cycle、吞吐 1 inst/cycle、`total_cycles 10148`。迁移导致 `build/obj_dir` 中的旧 Makefile 指向旧目录而构建失败，已由 `scripts/build_sim.sh` 的陈旧产物自动清理修复。
 
 ---
 
@@ -180,13 +182,13 @@ tests/tb/tb_vdot.cpp：流式测试中的期望由 C++ 内联模型独立计算
 
 ## 8. 未验证项与阻塞说明（重要）
 
-以下项目属于阶段二/三要求，但**本环境无法执行**，不计入本报告结论：
+以下项目属于阶段二/三要求，但阶段二执行时本环境无法执行或尚未执行，不计入本报告结论（后续状态已逐项标注）：
 
 | # | 未完成项 | 原因 | 影响 | 计划 |
 |---|---|---|---|---|
-| U-01 | 在香山昆明湖 V2 中集成并仿真 | 无 `xs-env`、香山源码、RISC-V 工具链；构建需 ≥32 GB 内存与数小时 | 阶段二"基于香山仿真环境"未闭环 | D1 环境就绪后按 `patches/xiangshan-vdot-integration.md` 执行 |
-| U-02 | 汇编级测试（`.S` + emu 运行） | 无 `riscv64-*-gcc` 与 emu | 同上 | 环境就绪后复用同一向量集 |
-| U-03 | NEMU 扩展 + difftest 协同仿真 | 无 NEMU 源码 | 阶段三 3.1.1/3.1.2 未闭环 | C 参考模型已就绪，可直接移植 |
+| U-01 | 在香山昆明湖 V2 中集成并仿真 | 香山源码与工具链已就绪（`build/xs-work/XiangShan` @ `16ae9dd`），集成尚未执行 | 阶段二"基于香山仿真环境"未闭环 | 按 `patches/xiangshan-vdot-integration.md` 执行 I1–I7（B2） |
+| U-02 | 汇编级测试（`.S` + emu 运行） | 工具链与 emu 已就绪；`vadd.S` 已跑通，`vdot` 汇编用例待集成后补 | 阶段二 `vdot` 汇编级测试未执行 | 集成后复用同一向量集 |
+| U-03 | NEMU 扩展 + difftest 协同仿真 | **已完成**（阶段三 T3.1–T3.4） | 1513/1513，RTL↔NEMU 0 mismatch | 见 `docs/phase3/cosim_report.md` |
 | U-04 | 基线 vs vdot 真实加速比 | 依赖 U-01 | 阶段三 3.3 仅有估算 | 见 `docs/phase3/perf_analysis.md`（明确标注估算） |
 | U-05 | 综合面积/时序 | 本阶段无 yosys/DC | 面积仅为结构性估算 | **阶段四部分关闭**：generic 综合 4186 单元 / 172 FF / 25 级 R2R，见 `docs/phase4/release_report.md` §3；PDK 级 µm²/ns 待环境 |
 

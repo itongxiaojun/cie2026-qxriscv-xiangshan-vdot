@@ -20,7 +20,9 @@ out/
 .DS_Store
 
 # 例外：阶段证据（日志与波形）需随仓库提交
+# 阶段一 VCD 原始波形约 100 MB，不入库；仓库只保留截图（png）与解析日志
 !docs/phase1/logs/*.log
+!docs/phase1/wave/*.png
 !docs/phase2/logs/*.log
 !docs/phase2/waveform/*.vcd
 !docs/phase3/*.log

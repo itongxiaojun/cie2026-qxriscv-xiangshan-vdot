@@ -1,0 +1,48 @@
+阶段一 · 1.3 vadd 运行与波形采集日志
+生成时间：2026-11-01 23:50:45  主机：debian  工作区：/home/dbqxxs/xsriscv/cieriscv
+镜像：build/phase1/vadd.bin (112 B)  源码：tests/phase1/vadd.S
+============================================================================
+
+[1] 运行命令
+
+$ cd /home/dbqxxs/xsriscv/cieriscv/build/xs-work/XiangShan
+$ ./build/emu -i /home/dbqxxs/xsriscv/cieriscv/build/phase1/vadd.bin \
+    --diff=ready-to-run/riscv64-nemu-interpreter-so \
+    --dump-wave -b 8200 -e 8360 --wave-path=/tmp/vadd_wave_r2.vcd
+
+[2] 终端输出（原始日志 29743 行；已剔除 29734 行纯 PERF 计数、还原 0 行被打断的 trap 行；ANSI 颜色码已去除）
+
+Using simulated 32768B flash
+Using simulated 8386560MB RAM
+The image is /home/dbqxxs/xsriscv/cieriscv/build/phase1/vadd.bin
+The reference model is ready-to-run/riscv64-nemu-interpreter-so
+The first instruction of core 0 has commited. Difftest enabled. 
+Core 0: HIT GOOD TRAP at pc = 0x80000038
+Core-0 instrCnt = 18, cycleCnt = 8,351, IPC = 0.002155
+Seed=0 Guest cycle spent: 8,355 (this will be different from cycleCnt if emu loads a snapshot)
+Host time spent: 42,404ms
+
+
+[3] 退出码
+
+EXIT=0
+
+[4] 波形产物
+
+  /tmp/vadd_wave_r2.vcd  100,664,602 B  （VCD，时间戳 = difftest cycleCnt，窗口 8200–8360）
+  说明：100 MB 原始 VCD 不入库（.gitignore 已排除 *.vcd），仓库内保留：
+    docs/phase1/wave/vadd_pipeline_wave.png  波形截图（分阶段局部放大）
+    docs/phase1/logs/04_wave_parse.log       信号解析与绘图日志
+
+[5] 判定（对应官方要求 1.3）
+
+  PASS - HIT GOOD TRAP at pc = 0x80000038（nemu_trap，a0=0）
+  PASS - instrCnt = 18, cycleCnt = 8,351，difftest 参考模型全程比对无 mismatch
+  PASS - 波形覆盖 取指(8246) -> 译码(8285) -> 发射执行(8323/8324) -> 访存写回(8317/8336/8339)
+         逐 cycle 时间线与信号路径见 docs/phase1/vadd_wave.md
+
+[6] 波形采集参数说明
+
+  --dump-wave          打开波形 dump（该 emu 以 EMU_TRACE=vcd 构建，产物为 VCD）
+  -b 8200 -e 8360      只采集 cycle 8200…8360；不限定窗口会生成 1.5 GB 级 VCD
+  --wave-path=<file>   输出路径

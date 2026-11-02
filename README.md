@@ -10,10 +10,10 @@
 
 | 阶段 | 内容 | 状态 |
 |---|---|---|
-| 阶段一 | 环境部署、`hello` 输出、vadd 波形分析 | **阻塞**：本机无 `xs-env` / RISC-V 工具链 |
-| 阶段二 | vdot.vv 设计文档、RTL、正/负/边界测试 | **设计 + RTL + 单元级验证完成**（1518/1518 PASS）；香山内集成待环境 |
-| 阶段三 | NEMU 扩展、协同仿真、基线对比与加速分析 | **NEMU 扩展 + 协同仿真完成**（1513/1513，RTL↔NEMU 0 mismatch）；单元级实测 3 cycle / 1.0 inst/cycle；平台实测待环境 |
-| 阶段四 | RTL 收口、综合评估、加速模型与提交 | **收口完成**：严格 lint 0 告警；generic 综合 4186 单元 / 172 FF / 最长路径 25 级（≈5.3k–8.4k GE）；加速模型 4.0× 延迟、6.0× 吞吐；PDK 签核与提交待环境 |
+| 阶段一 | 环境部署、`hello` 输出、vadd 波形分析 | **完成**：香山 `16ae9dd` 的 emu 已构建；真实 UART 输出 `hello xiangshan, I am qxriscv, IP address: 192.168.0.168`；4 份原始日志 + vadd 波形与逐 cycle 分析已入库（[env.md](docs/phase1/env.md)、[vadd_wave.md](docs/phase1/vadd_wave.md)） |
+| 阶段二 | vdot.vv 设计文档、RTL、正/负/边界测试 | **设计 + RTL + 单元级验证完成**（1518/1518 PASS）；香山内集成待实施 |
+| 阶段三 | NEMU 扩展、协同仿真、基线对比与加速分析 | **NEMU 扩展 + 协同仿真完成**（1513/1513，RTL↔NEMU 0 mismatch）；单元级实测 3 cycle / 1.0 inst/cycle；平台实测待集成后实施 |
+| 阶段四 | RTL 收口、综合评估、加速模型与提交 | **收口完成**：严格 lint 0 告警；generic 综合 4186 单元 / 172 FF / 最长路径 25 级（≈5.3k–8.4k GE）；加速模型 4.0× 延迟、6.0× 吞吐；PDK 签核与提交待实施 |
 
 ### 已完成并验证（模块级 RTL 仿真 + NEMU 协同仿真）
 
@@ -29,10 +29,27 @@
 | 基线在 NEMU 上跑通 | **1513 / 1513**，6→1 数据通路指令 | [03_baseline_nemu.log](docs/phase3/03_baseline_nemu.log) |
 | 单元级时序实测 | 3 cycle / 1.0 inst·cycle⁻¹（1024 条背靠背；全量 1518 条回归总 10148 cycles） | [03_rtl_full_perf.log](docs/phase4/03_rtl_full_perf.log) |
 | 严格 lint | **0 告警 0 错误**（`-Wall`，仅 1 处语义性豁免） | [02_verilator_lint.log](docs/phase4/02_verilator_lint.log) |
-| generic 综合 | 4186 单元 / 172 FF；最长 R2R 路径 **25 级**（EX2 加法树）；**≈5.3k–8.4k GE** | [01_yosys_synth.log](docs/phase4/01_yosys_synth.log) |
+| generic 综合 | 4186 单元 / 172 FF；最长 R2R 路径 **25 级**（EX2 加法树）；**≈5.3k–8.4k GE** | [01_yosys_synth.log](docs/phase4/01_yosys_synth.log)（历史证据，当前环境无 yosys，暂不可复跑） |
 | 波形 | `docs/phase2/waveform/vdot_unit.vcd` | — |
 
 > **表述约束**：以上均为**功能单元模块级**仿真与 **NEMU 指令集模拟器**结果。香山昆明湖 V2 内集成与真实加速比**尚未执行**，不得表述为"已在香山平台验证"或给出实测加速比。
+
+## 当前环境（2026-11-01）
+
+工作区已迁移到 `/home/dbqxxs/xsriscv/cieriscv`，主机为 Debian 13 / 48 核 / 31 GiB。工具可用性决定哪些证据能复跑：
+
+| 组件 | 状态 | 可复跑的内容 |
+|---|---|---|
+| Python 3.13 / gcc 14.2 / Make 4.4 | 可用 | 参考模型、向量、C 交叉比对 |
+| Verilator 5.034（`.tools/verilator`） | 可用 | 1518 条单元回归、严格 lint |
+| NEMU（`.tools/nemu`，`a683e0b` + 补丁） | 可用 | 1513 条自测、RTL↔NEMU diff、基线计数 |
+| yosys | **缺失** | generic 综合**暂不可复跑**（保留历史日志） |
+| RISC-V GCC（`.tools/riscv`） | **可用** | `riscv-none-elf-gcc` 15.2.0；阶段一裸机镜像 |
+| 香山源码 + emu（`build/xs-work/XiangShan`） | **可用** | 香山 `16ae9dd`；`build/emu` 已构建，阶段一 hello / vadd 波形已复跑 |
+| JDK / mill（`.tools/`） | **可用** | Temurin 21.0.13 / mill 0.12.3；香山 RTL 生成 |
+| sbt / Scala | **缺失** | Chisel 版仍未编译校验 |
+
+完整清点与版本锁定见 [docs/phase1/env.md](docs/phase1/env.md)。
 
 ## 仓库结构
 
@@ -43,6 +60,7 @@
 ├── ipd/                 # IPD 流程文档集（方案、规格、测试方案、计划、对照表）
 ├── docs/                # 阶段交付文档与证据
 │   ├── PROGRESS.md      # 任务进度跟踪表（Living Document，持续更新）
+│   ├── phase1/          # 环境与执行记录、运行日志（logs/）、vadd 波形截图（wave/）与分析文档
 │   ├── phase2/          # 设计文档、测试报告、日志、波形
 │   ├── phase3/          # 协同仿真报告、基线日志、单元级性能日志（含估算口径声明）
 │   └── phase4/          # RTL 收口、lint、generic 综合、加速模型报告与日志
@@ -56,7 +74,7 @@
 │   ├── ref_vdot.py      # Python golden model
 │   ├── ref_baseline.py  # 基线指令序列的语义等价模型
 │   ├── model/vdot_ref.c # C 参考模型（NEMU-ready）
-│   ├── as/mini_asm.py   # 手写 RISC-V/RVV 汇编器（无工具链环境下的镜像生成）
+│   ├── as/mini_asm.py   # 纯 Python 的 RISC-V/RVV 汇编器（不依赖外部工具链生成镜像）
 │   ├── run_nemu_cosim.py    # NEMU 自测 + 协同仿真 + RTL 结果导出
 │   ├── run_nemu_baseline.py # RVV 组合基线在 NEMU 上跑通并计数
 │   ├── gen_vectors.py   # 向量生成（定向 + 随机 + 边界密集）
@@ -64,6 +82,8 @@
 │   └── vectors/         # 1518 条测试向量
 └── scripts/             # 一键构建与回归
 ```
+
+> 工作区内另有 `openTPU-main/`（开源 AI 加速器参考代码），仅在本地用于对照阅读，已被 `.gitignore` 排除，不随仓库分发、也不属于本项目交付物。
 
 ## 方案与交付文档
 
@@ -75,6 +95,9 @@
 | [开发计划、WBS 与里程碑](ipd/03_开发计划_WBS与里程碑.md) | 4 周排期、WBS、门禁、降级预案 |
 | [评审对照与提交检查表](ipd/04_评审对照与提交检查表.md) | 官方要求 → 交付物映射、提交清单、录屏与 PPT 脚本 |
 | [阶段二设计文档](docs/phase2/design.md) | 提交版：指令语义、微架构、数据通路、RTL 结构、追溯 |
+| [阶段一环境与执行记录](docs/phase1/env.md) | 当前环境基线、版本锁定、构建耗时、1.1/1.2/1.3 执行结果；旧环境历史（仅追溯） |
+| [阶段一 vadd 波形分析](docs/phase1/vadd_wave.md) | 按波形逐 cycle 讲解取指→译码→发射→向量执行→写回，含逐字节核对与复现命令（截图 `docs/phase1/wave/vadd_pipeline_wave.png`） |
+| [阶段一原始日志](docs/phase1/logs/01_env_setup.log) | `01` 环境与 emu 构建、`02` hello 运行、`03` vadd 波形采集、`04` 波形解析 |
 | [阶段二测试报告](docs/phase2/test_report.md) | 1518 条用例结果、时序实测、断言、缺陷记录、未验证项 |
 | [香山集成说明](patches/xiangshan-vdot-integration.md) | 集成规程与核对表（**未执行**） |
 | [NEMU 扩展补丁](patches/nemu-vdot.patch) | 阶段三提交版：`vdot.vv` 译码 + 执行语义（3 文件，+44 行） |
@@ -102,7 +125,9 @@ bash scripts/run_unit_tests.sh
 bash scripts/run_all.sh    # 任一步失败即返回非 0；末行打印 ALL : PASS / FAIL
 ```
 
-依赖：`python3`、`gcc`、Verilator（脚本依次探测 `verilator-inst/`、`.tools/verilator/`、系统 PATH）。
+依赖：`python3`、`gcc`、Verilator（脚本依次探测 `verilator-inst/`、`.tools/verilator/`、系统 PATH），NEMU 已构建于 `.tools/nemu/build/`。
+
+> 工作区迁移后，`build/obj_dir` 里残留的 Makefile 会写死旧目录的绝对路径，导致构建报"没有规则可制作目标"。[scripts/build_sim.sh](scripts/build_sim.sh) 会自动识别并清理这类陈旧产物，无需手工删除 `build/`。
 
 预期输出：
 
@@ -135,7 +160,7 @@ python3 tests/run_nemu_baseline.py
 
 预期输出：`cases_fail 0`、`rtl_vs_nemu : lines=1513/nemu=1513 mismatch=0`、`alu_op_ratio : 6.0x`，均以 `RESULT : PASS` 结尾。
 
-> `tests/as/mini_asm.py` 是本项目自带的最小 RISC-V/RVV 汇编器，用于在无 RISC-V 工具链的环境中生成平面镜像。
+> `tests/as/mini_asm.py` 是本项目自带的最小 RISC-V/RVV 汇编器，用于生成平面镜像（不依赖交叉汇编器）。
 
 ### 阶段四：RTL 质量门禁与综合评估
 
@@ -153,13 +178,17 @@ yosys -p "read_verilog -sv rtl/verilog/VDot.v; synth -top VDot -noabc; techmap; 
 
 | 组件 | 版本 / commit |
 |---|---|
-| xs-env | 待记录（阶段一，环境就绪后补） |
-| XiangShan | 待记录（阶段一） |
+| 工作区 | `/home/dbqxxs/xsriscv/cieriscv`（2026-11-01 迁移到当前主机） |
+| xs-env | 未装官方镜像；`.tools/` 手工等价部署（Temurin JDK 21.0.13、mill 0.12.3、xPack GCC 15.2.0、Verilator 5.034） |
+| XiangShan | `16ae9ddcda54fc9a2fddffad73174cf793ac7814`（2025-04-03，昆明湖 V2）；子模块见 [env.md](docs/phase1/env.md) §5.1 |
+| RISC-V GCC | xPack `riscv-none-elf-gcc` 15.2.0 / objcopy 2.45（`.tools/riscv`） |
+| difftest 参考模型 | `ready-to-run/riscv64-nemu-interpreter-so`（626,696 B） |
 | NEMU | `a683e0b`（XiangShan 版源码）+ `patches/nemu-vdot.patch` |
-| Yosys | 0.52（Debian 包本地解包，仅用于 generic 综合评估，未安装进系统） |
-| Verilator | 5.034（本机源码构建，`--assert --trace`） |
+| Yosys | 0.52（旧环境 deb 本地解包；**当前环境未安装**，综合日志为历史证据，复跑需另行提供 yosys） |
+| Verilator | 5.034（`.tools/verilator` 源码树，`--assert --trace`） |
 | g++ | Debian 14.2.0 |
 | Python | 3.13.5 |
+| Docker | 29.4.0（当前环境可用，可用于 `xs-env` 镜像方案与文件属主修复） |
 
 ## 许可与引用
 

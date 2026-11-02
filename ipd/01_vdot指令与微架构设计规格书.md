@@ -2,7 +2,7 @@
 
 > 项目：2026CIE · 香山昆明湖 V2 自定义向量点积指令
 > 文档版本：v1.0（待 TR1 评审）　|　日期：2026-10-27　|　责任人：A
-> 上游依据：[赛题资料.md](file:///mnt/hdata/qxriscv/cieriscv/doc/赛题资料.md) 官方伪代码、[00 章程 §1.3](file:///mnt/hdata/qxriscv/cieriscv/ipd/00_项目章程与总体方案.md)
+> 上游依据：[赛题资料.md](file:///home/dbqxxs/xsriscv/cieriscv/doc/赛题资料.md) 官方伪代码、[00 章程 §1.3](file:///home/dbqxxs/xsriscv/cieriscv/ipd/00_项目章程与总体方案.md)
 
 ---
 
@@ -167,7 +167,7 @@ def vdot_vv(vd, vs1, vs2):
 
 ### 3.5 与香山的集成点（D6 需逐项核对）
 
-> **重要声明**：当前工作区未检出香山源码。下表为按昆明湖 V2/香山通用结构给出的集成清单，**具体文件路径与符号名必须在 D6 用 grep 核实后回填**，不得直接照抄。
+> **重要声明**：香山源码已检出（`build/xs-work/XiangShan` @ `16ae9dd`），但下表尚未逐一核实回填。下表为按昆明湖 V2/香山通用结构给出的集成清单，**具体文件路径与符号名必须在集成时用 grep 核实后回填**，不得直接照抄。
 
 | # | 集成环节 | 需要做的事 | 典型落点（待核实） | 核实方法 |
 |---|---|---|---|---|
@@ -235,7 +235,7 @@ class VDot(implicit p: Parameters) extends VFu {
 
 ## 5. 需求—验证追溯（摘要）
 
-完整用例见 [02 测试方案 §4](file:///mnt/hdata/qxriscv/cieriscv/ipd/02_测试与验证方案.md)。
+完整用例见 [02 测试方案 §4](file:///home/dbqxxs/xsriscv/cieriscv/ipd/02_测试与验证方案.md)。
 
 | 需求 ID | 需求 | 验证用例 |
 |---|---|---|
@@ -270,4 +270,4 @@ class VDot(implicit p: Parameters) extends VFu {
 | Q2 | `vd[1..]` 下标是元素还是位 | 输出布局 | A / D2（O1） |
 | Q3 | 昆明湖 V2 的 VFu 延迟约定（2 或 3 级） | 流水级数 | A / D7 |
 | Q4 | 是否能从 Decode 阶段抛 illegal（vtype 运行时可知？） | 异常实现方式 | A / D8 |
-| Q5 | 面积估算是否需要综合报告佐证 | 报告可信度 | **已关闭（D17，阶段四 T4.2/T4.3）**：已用 Yosys 0.52 generic 综合给出 4186 单元 / 172 FF / 25 级 R2R / ≈5.3k–8.4k GE，见 `docs/phase4/release_report.md`；PDK 级 µm²/ns 列入 B4 待环境 |
+| Q5 | 面积估算是否需要综合报告佐证 | 报告可信度 | **已关闭（D17，阶段四 T4.2/T4.3）**：已用 Yosys 0.52 generic 综合给出 4186 单元 / 172 FF / 25 级 R2R / ≈5.3k–8.4k GE，见 `docs/phase4/release_report.md`；该日志为迁移前历史证据（当前环境无 yosys，暂不可复跑），PDK 级 µm²/ns 列入 B4 待环境 |

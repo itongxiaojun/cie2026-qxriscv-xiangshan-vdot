@@ -1,0 +1,189 @@
+阶段一 · 环境部署与 emu 构建记录
+生成时间：2026-11-01 23:46:36 +0800
+主机：debian  工作区：/home/dbqxxs/xsriscv/cieriscv
+================================================================================
+
+说明：本日志逐段记录阶段一（1.2 官方"完整部署与操作过程日志"）的环境部署事实：
+主机基线 -> 工具链版本 -> 香山源码锁定 -> 裸机镜像编译 -> emu 构建 -> 产物。
+每段的 "$ " 行是实际执行的命令，其下为该命令在 2026-11-01 的真实输出（未编辑）。
+
+================================================================================
+[1] 主机基线
+
+$ uname -a
+Linux debian 6.12.73+deb13-amd64 #1 SMP PREEMPT_DYNAMIC Debian 6.12.73-1 (2026-02-17) x86_64 GNU/Linux
+
+$ nproc
+48
+
+$ free -g
+               total        used        free      shared  buff/cache   available
+内存：            31           8          15           1           9          22
+交换：            22           4          17
+
+$ df -h /
+文件系统        大小  已用  可用 已用% 挂载点
+/dev/sda1       417G  314G   82G   80% /
+
+================================================================================
+[2] 工具链版本（全部解包到工作区 .tools/，无需 root）
+
+$ /home/dbqxxs/xsriscv/cieriscv/.tools/jdk/bin/java -version
+openjdk version "21.0.13" 2026-10-20 LTS
+OpenJDK Runtime Environment Temurin-21.0.13+9 (build 21.0.13+9-LTS)
+OpenJDK 64-Bit Server VM Temurin-21.0.13+9 (build 21.0.13+9-LTS, mixed mode, sharing)
+
+$ /home/dbqxxs/xsriscv/cieriscv/.tools/bin/mill --version
+Mill Build Tool version 0.12.3
+Java version: 21.0.13, vendor: Eclipse Adoptium, runtime: /home/dbqxxs/xsriscv/cieriscv/.tools/jdk
+Default locale: zh_CN, platform encoding: UTF-8
+OS name: "Linux", version: 6.12.73+deb13-amd64, arch: amd64
+
+$ /home/dbqxxs/xsriscv/cieriscv/.tools/riscv/bin/riscv-none-elf-gcc --version
+riscv-none-elf-gcc (xPack GNU RISC-V Embedded GCC x86_64) 15.2.0
+Copyright (C) 2025 Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+
+$ /home/dbqxxs/xsriscv/cieriscv/.tools/riscv/bin/riscv-none-elf-objcopy --version
+GNU objcopy (xPack GNU RISC-V Embedded GCC x86_64) 2.45
+Copyright (C) 2025 Free Software Foundation, Inc.
+This program is free software; you may redistribute it under the terms of
+the GNU General Public License version 3 or (at your option) any later version.
+This program has absolutely no warranty.
+
+$ VERILATOR_ROOT=/home/dbqxxs/xsriscv/cieriscv/.tools/verilator /home/dbqxxs/xsriscv/cieriscv/.tools/verilator/bin/verilator --version
+Verilator 5.034 2025-02-24 rev v5.034
+
+$ python3 --version
+Python 3.13.5
+
+$ gcc --version | head -1
+gcc (Debian 14.2.0-19) 14.2.0
+
+$ make --version | head -1
+GNU Make 4.4.1
+
+================================================================================
+[3] 香山源码与版本锁定
+
+$ git -C /home/dbqxxs/xsriscv/cieriscv/build/xs-work/XiangShan log -1 --format='%H%n%ci%n%s'
+16ae9ddcda54fc9a2fddffad73174cf793ac7814
+2025-04-03 22:44:20 +0800
+feat(Top): make address spaces of seperate TL port configurable (#4496)
+
+$ git -C /home/dbqxxs/xsriscv/cieriscv/build/xs-work/XiangShan submodule status
+ 82079f4081bbc1f0221c790fbf8a29b1f23f48b8 coupledL2 (v0.9-247-g82079f4)
+ 62e4540c03c03aa947bdb67f4b6bf66f1a29c5d0 difftest (62e4540c)
+ e1bd4695ca7beb36a5ce7357e9527ad9e95b9ec1 fudian (heads/pipeline)
+ 90aaf5935206ff322e461c3d021436c20dd0ac85 huancun (90aaf59)
+ 614ceb4c5d39d32e6ae786693a35da429ea32c12 openLLC (614ceb4)
+ ed8c30e1ec8a9c9aa6b116ce54281235d00273fa ready-to-run (ed8c30e)
+ bea0af5d855a871699b907c1988961141bbf28e7 rocket-chip (bea0af5d)
+ 9464aee3c77b021a037f28aa1b3fe53c71b516f6 src/main/resources/aia (heads/main)
+ a8ca0c6564865ee69b564d431ecbc52074ba8060 utility (a8ca0c6)
+ cadd3c2f43096e253d61296b33ac697be8354e29 yunsuan (cadd3c2)
+
+================================================================================
+[4] 阶段一裸机镜像编译（RISC-V RV64GCV）
+
+$ PATH=/home/dbqxxs/xsriscv/cieriscv/.tools/riscv/bin:$PATH bash tests/phase1/build.sh
+/home/dbqxxs/xsriscv/cieriscv/.tools/riscv/bin/../lib/gcc/riscv-none-elf/15.2.0/../../../../riscv-none-elf/bin/ld: warning: /home/dbqxxs/xsriscv/cieriscv/build/phase1/vadd.elf has a LOAD segment with RWX permissions
+IP_ADDR = 192.168.0.168
+-rwxrwxr-x 1 dbqxxs dbqxxs  98 11月 1日 23:46 /home/dbqxxs/xsriscv/cieriscv/build/phase1/hello.bin
+-rwxrwxr-x 1 dbqxxs dbqxxs 112 11月 1日 23:46 /home/dbqxxs/xsriscv/cieriscv/build/phase1/vadd.bin
+
+$ ls -l /home/dbqxxs/xsriscv/cieriscv/build/phase1/*.bin
+-rwxrwxr-x 1 dbqxxs dbqxxs  98 11月 1日 23:46 /home/dbqxxs/xsriscv/cieriscv/build/phase1/hello.bin
+-rwxrwxr-x 1 dbqxxs dbqxxs 112 11月 1日 23:46 /home/dbqxxs/xsriscv/cieriscv/build/phase1/vadd.bin
+
+$ cat /home/dbqxxs/xsriscv/cieriscv/build/phase1/ip_addr.h
+#define IP_ADDR "IP address: 192.168.0.168"
+
+$ /home/dbqxxs/xsriscv/cieriscv/.tools/riscv/bin/riscv-none-elf-objdump -d /home/dbqxxs/xsriscv/cieriscv/build/phase1/vadd.elf
+
+/home/dbqxxs/xsriscv/cieriscv/build/phase1/vadd.elf:     file format elf64-littleriscv
+
+
+Disassembly of section .text:
+
+0000000080000000 <_start>:
+    80000000:	6289                	lui	t0,0x2
+    80000002:	2002829b          	addiw	t0,t0,512 # 2200 <_start-0x7fffde00>
+    80000006:	3002a073          	csrs	mstatus,t0
+    8000000a:	00000517          	auipc	a0,0x0
+    8000000e:	03650513          	addi	a0,a0,54 # 80000040 <src1>
+    80000012:	00000597          	auipc	a1,0x0
+    80000016:	03e58593          	addi	a1,a1,62 # 80000050 <src2>
+    8000001a:	00000617          	auipc	a2,0x0
+    8000001e:	04660613          	addi	a2,a2,70 # 80000060 <dst>
+    80000022:	0c0072d7          	vsetvli	t0,zero,e8,m1,ta,ma
+    80000026:	02050087          	vle8.v	v1,(a0)
+    8000002a:	02058107          	vle8.v	v2,(a1)
+    8000002e:	021101d7          	vadd.vv	v3,v1,v2
+    80000032:	020601a7          	vse8.v	v3,(a2)
+    80000036:	4501                	li	a0,0
+    80000038:	0005006b          	.word	0x0005006b
+    8000003c:	a001                	j	8000003c <_start+0x3c>
+
+================================================================================
+[5] emu 构建（Chisel elaborate -> firtool -> Verilator，摘自构建日志首部）
+
+构建日志：/tmp/xs_build.log（本次构建全程重定向）；原始 Makefile 目标如下：
+
+mkdir -p build/rtl
+Sun, 01 Nov 2026 21:49:55 +0800
+time -avp -o ./build/time.log mill -i -Djvm-xmx=12G -Djvm-xss=256m xiangshan.test.runMain top.SimTop    \
+	--target-dir build/rtl --config DefaultConfig --issue E.b --firtool-opt "--repl-seq-mem --repl-seq-mem-file=SimTop.sv.conf"		\
+	--num-cores 1 --dump-fir --target systemverilog --split-verilog --firtool-opt "-O=release --disable-annotation-unknown --lowering-options=explicitBitcast,disallowLocalVariables,disallowPortDeclSharing,locationInfoStyle=none"  --enable-difftest --full-stacktrace
+Preparing Java 21.0.13 runtime; this may take a minute or two ...
+
+关键行：
+
+4270:[768] [warn] There were 148 warning(s) during hardware elaboration.
+4300:make -C ./difftest emu SIM_TOP=SimTop DESIGN_DIR=/home/dbqxxs/xsriscv/cieriscv/build/xs-work/XiangShan NUM_CORES=1 RTL_SUFFIX=sv
+4305:Building emu...
+4314:EXIT=0
+
+时间戳：
+
+Sun, 01 Nov 2026 21:49:55 +0800
+Sun, 01 Nov 2026 22:05:33 +0800
+Sun, 01 Nov 2026 22:14:16 +0800
+
+================================================================================
+[6] 构建耗时（build/time.log 摘要）
+
+阶段 1：Chisel elaborate + firtool（mill runMain top.SimTop）
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 15:33.44
+	Maximum resident set size (kbytes): 12984920
+	Exit status: 0
+
+阶段 2：Verilator 生成 C++ 模型（verilator --exe --cc --top-module SimTop）
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 8:42.61
+	Maximum resident set size (kbytes): 12573408
+	Exit status: 0
+
+阶段 3：C++ 编译链接（make -s ... VSimTop.mk）
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 29:58.29
+	Maximum resident set size (kbytes): 2652116
+	Exit status: 0
+
+================================================================================
+[7] 构建产物与运行依赖
+
+$ ls -l /home/dbqxxs/xsriscv/cieriscv/build/xs-work/XiangShan/build/emu
+-rwxrwxr-x 1 dbqxxs dbqxxs 261132232 11月 1日 22:44 /home/dbqxxs/xsriscv/cieriscv/build/xs-work/XiangShan/build/emu
+
+$ ls -l /home/dbqxxs/xsriscv/cieriscv/build/xs-work/XiangShan/ready-to-run/riscv64-nemu-interpreter-so
+-rw-rw-r-- 1 dbqxxs dbqxxs 626696 11月 1日 21:45 /home/dbqxxs/xsriscv/cieriscv/build/xs-work/XiangShan/ready-to-run/riscv64-nemu-interpreter-so
+
+$ ls -l /home/dbqxxs/xsriscv/cieriscv/build/xs-work/XiangShan/build/rtl/SimTop.sv /home/dbqxxs/xsriscv/cieriscv/build/xs-work/XiangShan/build/rtl/SimTop.sv.conf
+-rw-rw-r-- 1 dbqxxs dbqxxs 1162006 11月 1日 22:05 /home/dbqxxs/xsriscv/cieriscv/build/xs-work/XiangShan/build/rtl/SimTop.sv
+-rw-rw-r-- 1 dbqxxs dbqxxs    1777 11月 1日 22:05 /home/dbqxxs/xsriscv/cieriscv/build/xs-work/XiangShan/build/rtl/SimTop.sv.conf
+
+================================================================================
+结论：环境已就绪，1.1 / 1.3 的运行证据见 02_hello_run.log、03_vadd_run.log。
+注意：emu 必须显式指定 --diff=/home/dbqxxs/xsriscv/cieriscv/build/xs-work/XiangShan/ready-to-run/riscv64-nemu-interpreter-so；
+      默认相对路径 difftest/build/... 在本仓库不存在，会报找不到参考模型。

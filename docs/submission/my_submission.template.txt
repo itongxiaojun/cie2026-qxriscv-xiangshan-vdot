@@ -7,4 +7,4 @@ team-members: <成员1(角色), 成员2(角色)>
 university: <学校/单位>
 advisor: <指导老师>
 phone: <联系电话>
-notes: 阶段一（香山环境构建/hello/vadd 波形）因本环境缺 xs-env 与 RISC-V 工具链尚未闭环；阶段二、三、四交付完整，证据见仓库 docs/ 与 scripts/run_all.sh。
+notes: 阶段一已闭环（香山 16ae9dd 的 emu 构建 EXIT=0、hello 真实 IP 输出、vadd 波形与逐 cycle 分析），四份日志与波形截图随仓库提交；阶段二、三、四交付完整；vdot 的香山内集成尚未执行，故不宣称平台实测加速比。证据见仓库 docs/ 与 scripts/run_all.sh。

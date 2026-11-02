@@ -436,12 +436,12 @@ note(
 );
 
 /* ------------------------------------------------------------------ */
-/* 04 阶段一状态（诚实披露）                                           */
+/* 04 阶段一：环境部署与 vadd 波形（已闭环）                            */
 /* ------------------------------------------------------------------ */
 const s4 = pptx.addSlide({ masterName: "BASE" });
-addHeader(s4, "03 / 阶段一", "环境受限：验证路径如何替代", 4);
+addHeader(s4, "03 / 阶段一", "环境部署与 vadd 波形：已闭环", 4);
 
-card(s4, { x: M, y: 1.72, w: CW, h: 0.86, fill: C.orangeSoft, border: "EBCFAF" });
+card(s4, { x: M, y: 1.72, w: CW, h: 0.86, fill: C.greenSoft, border: "B7DCC4" });
 s4.addText("状态披露", {
   x: M + 0.22,
   y: 1.8,
@@ -449,11 +449,11 @@ s4.addText("状态披露", {
   h: 0.3,
   fontSize: 10.5,
   bold: true,
-  color: C.orange,
+  color: C.green,
   fontFace: MONO,
 });
 s4.addText(
-  "本环境无 xs-env 与 RISC-V 工具链，阶段一（香山构建 / hello / vadd 波形）未闭环；所有功能与性能结论均来自模块级 RTL 仿真与 NEMU 协同仿真，不宣称已在香山平台验证。",
+  "香山 16ae9dd 的 emu 已构建（EXIT=0），芯片级 hello 打印真实 IP，vadd 波形已采集并逐 cycle 讲解，官方 1.1–1.3 全部达标；vdot 的香山内集成尚未执行，故仍不宣称平台实测加速比。",
   {
     x: M + 1.45,
     y: 1.78,
@@ -467,9 +467,9 @@ s4.addText(
 );
 
 const flow = [
-  ["Verilator 5.034", "模块级 1518 条用例\n3 cycle / 1.0 inst/cycle"],
-  ["NEMU 协同仿真", "同一向量集 1513 条\nRTL ↔ NEMU 0 mismatch"],
-  ["待环境解锁", "xs-env 内集成 I1–I7\n平台周期与加速比实测"],
+  ["香山 emu", "16ae9dd 构建，EXIT=0\n耗时约 54 min，261 MB"],
+  ["官方 hello", "真实 UART 输出 + GOOD TRAP\ninstrCnt 295 / cycleCnt 10,819"],
+  ["vadd 波形", "8200–8360 cycle 采集\n逐 cycle 五阶段 + 截图入库"],
 ];
 flow.forEach((f, i) => {
   const x = M + i * 4.18;
@@ -478,8 +478,8 @@ flow.forEach((f, i) => {
     y: 2.86,
     w: 3.72,
     h: 1.62,
-    fill: i === 2 ? C.soft : "FFFFFF",
-    border: i === 2 ? C.line : "BFDDE0",
+    fill: "FFFFFF",
+    border: "BFDDE0",
   });
   s4.addText(f[0], {
     x: x + 0.2,
@@ -488,7 +488,7 @@ flow.forEach((f, i) => {
     h: 0.3,
     fontSize: 13,
     bold: true,
-    color: i === 2 ? C.gray : C.teal,
+    color: C.teal,
     fontFace: F,
   });
   s4.addText(f[1], {
@@ -516,7 +516,7 @@ flow.forEach((f, i) => {
 });
 
 card(s4, { x: M, y: 4.75, w: CW, h: 1.78, fill: "FFFFFF" });
-s4.addText("已完成的替代证据（可复现）", {
+s4.addText("阶段一证据（可复现）", {
   x: M + 0.25,
   y: 4.88,
   w: 5,
@@ -532,15 +532,15 @@ bullet(
   5.22,
   CW - 0.5,
   [
-    "单元级：定向 18 条 + 随机/边界 1500 条，1518/1518 PASS；背靠背 1024 条流式无气泡",
-    "三方一致：Python 参考模型、C 模型、RTL 对 128 bit 全宽逐位比对，1518/1518 一致",
-    "协同：NEMU 内新增 vdot 译码与执行，1513 条写回用例与 RTL 结果 0 mismatch",
+    "环境：01_env_setup.log 记录版本锁定、构建命令与三阶段耗时（15:33 / 8:43 / 29:58，EXIT=0）",
+    "运行：02_hello_run.log 保留真实 UART 输出与 EXIT=0；03_vadd_run.log 保留波形 dump 参数",
+    "波形：vadd_pipeline_wave.png + vadd_wave.md 覆盖取指/译码/执行/访存写回，数据逐字节可核对",
   ],
   { fontSize: 10.8, maxH: 1.2 }
 );
 note(
   s4,
-  "阶段一状态必须如实披露，这是评审最敏感的一点。我们不给未测数字：三条证据全部可在仓库复现，脚本 run_all.sh 一键跑完。"
+  "阶段一已闭环：emu 构建、hello 真实 UART 输出、vadd 波形三件事都有日志与截图随仓库提交。仍要如实说明 vdot 在香山源码内的 I1–I7 集成（B2）尚未执行，因此本页不出现平台周期与加速比。"
 );
 
 /* ------------------------------------------------------------------ */
@@ -848,7 +848,7 @@ s7.addText("状态声明", {
   fontFace: MONO,
 });
 s7.addText(
-  "I1–I7 已形成可执行的集成规程与代码骨架（patches/xiangshan-vdot-integration.md），但尚未在香山源码上落地；集成与平台回归随 xs-env 解锁后执行，届时需重跑全部证据链。",
+  "I1–I7 已形成可执行的集成规程与代码骨架（patches/xiangshan-vdot-integration.md），但尚未在香山源码上落地；环境（16ae9dd + emu）与工具链已就绪，待执行集成后重跑全部证据链。",
   {
     x: M + 1.45,
     y: 5.16,
@@ -1117,7 +1117,7 @@ s10.addText("口径声明", {
   fontFace: MONO,
 });
 s10.addText(
-  "uop 数与动态指令数为实测；12→3 cycle 为结构模型推演（基线按 4 个串行向量操作 ×3 cycle）。平台实测周期与加速比待 xs-env。",
+  "uop 数与动态指令数为实测；12→3 cycle 为结构模型推演（基线按 4 个串行向量操作 ×3 cycle）。平台实测周期与加速比待 vdot 集成后取得。",
   { x: M + 0.22, y: 4.56, w: 6.1, h: 0.82, fontSize: 10, color: C.ink, fontFace: F, lineSpacingMultiple: 1.15 }
 );
 
@@ -1225,7 +1225,7 @@ const s12 = pptx.addSlide({ masterName: "BASE" });
 addHeader(s12, "11 / 结论", "完成度、限制与下一步", 12);
 
 const st = [
-  ["阶段一", "阻塞", "缺 xs-env 与工具链", C.red],
+  ["阶段一", "完成", "emu/hello/vadd 波形入库", C.green],
   ["阶段二", "完成", "1518/1518，3 cycle", C.green],
   ["阶段三", "完成", "1513/1513，0 mismatch", C.green],
   ["阶段四", "完成", "lint 0，综合与回归全绿", C.green],
@@ -1297,7 +1297,7 @@ note(
 );
 
 /* ------------------------------------------------------------------ */
-const OUT = "/mnt/hdata/qxriscv/cieriscv/docs/submission/qxriscv-vdot-2026CIE.pptx";
+const OUT = require("path").join(__dirname, "qxriscv-vdot-2026CIE.pptx");
 pptx.slides.forEach((s, i) => {
   warnIfSlideHasOverlaps(s, pptx);
   warnIfSlideElementsOutOfBounds(s, pptx);

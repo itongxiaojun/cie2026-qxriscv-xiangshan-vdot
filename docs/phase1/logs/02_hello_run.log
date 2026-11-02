@@ -1,0 +1,45 @@
+阶段一 · 1.1 官方 hello 运行日志
+生成时间：2026-11-01 23:50:45  主机：debian  工作区：/home/dbqxxs/xsriscv/cieriscv
+镜像：build/phase1/hello.bin (98 B)  源码：tests/phase1/hello.S
+============================================================================
+
+[1] 运行命令
+
+$ cd /home/dbqxxs/xsriscv/cieriscv/build/xs-work/XiangShan
+$ ./build/emu -i /home/dbqxxs/xsriscv/cieriscv/build/phase1/hello.bin \
+    --diff=ready-to-run/riscv64-nemu-interpreter-so
+
+[2] 终端输出（原始日志 29744 行；已剔除 29733 行纯 PERF 计数、还原 1 行被打断的 trap 行；ANSI 颜色码已去除）
+
+emu compiled at Nov  1 2026, 22:14:17
+Using simulated 32768B flash
+Using simulated 8386560MB RAM
+The image is /home/dbqxxs/xsriscv/cieriscv/build/phase1/hello.bin
+The reference model is ready-to-run/riscv64-nemu-interpreter-so
+The first instruction of core 0 has commited. Difftest enabled. 
+hello xiangshan, I am qxriscv, IP address: 192.168.0.168
+Core 0: HIT GOOD TRAP at pc = 0x80000020
+    ^ 该行在控制台与 PERF 计数打印交织，已按 "Core N:" 片段还原
+Core-0 instrCnt = 295, cycleCnt = 10,819, IPC = 0.027267
+Seed=0 Guest cycle spent: 10,823 (this will be different from cycleCnt if emu loads a snapshot)
+Host time spent: 74,084ms
+
+
+[3] 退出码
+
+EXIT=0
+
+[4] 判定（对应官方要求 1.1）
+
+  PASS - UART 逐字节输出：
+         hello xiangshan, I am qxriscv, IP address: 192.168.0.168
+  PASS - nemu_trap（.word 0x0005006b, a0=0）：
+         Core 0: HIT GOOD TRAP at pc = 0x80000020
+  PASS - 计数：instrCnt = 295, cycleCnt = 10,819（difftest 全程已启用，无报错）
+
+[5] 关键实现约束（踩坑记录，详见 docs/phase1/vadd_wave.md §2 与 env.md §5）
+
+  - UART Lite 基址 0x40600000，THR 偏移 +0x4 -> 写 0x40600004；写成 0x10000004（flash 空间）不会输出。
+  - 问候语必须是单条 .asciz；拆成多条 .asciz 时首个 \0 会截断，IP 段不会打印。
+  - 结束必须用 nemu_trap（.word 0x0005006b，a0=0）；用 ebreak 会触发真实断点异常 -> double trap。
+  - emu 需显式 --diff=ready-to-run/riscv64-nemu-interpreter-so；默认相对路径在本仓库不存在。

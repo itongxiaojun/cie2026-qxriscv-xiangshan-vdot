@@ -1,7 +1,12 @@
-/* 阶段一 vadd 波形测试：e8/m1 向量加法，覆盖 取指→译码→发射→向量执行→写回 */
+/* 阶段一 vadd 波形测试：e8/m1 向量加法，覆盖 取指→译码→发射→向量执行→写回
+ * 注意：裸机启动时 mstatus.FS/VS 为 Off，向量指令会触发非法指令异常并二次 trap，
+ *       因此必须先置 FS=VS=Initial 再执行 vsetvli 及向量指令。
+ */
     .section .text.init, "ax", @progbits
     .globl _start
 _start:
+    li      t0, 0x2200          /* mstatus.FS(14:13)=Initial | VS(10:9)=Initial */
+    csrrs   x0, mstatus, t0
     la      a0, src1
     la      a1, src2
     la      a2, dst
@@ -11,7 +16,7 @@ _start:
     vadd.vv v3, v1, v2
     vse8.v  v3, (a2)
     li      a0, 0
-    ebreak
+    .word   0x0005006b      /* nemu_trap: a0(=0) -> GOOD TRAP */
 1:
     j       1b
 
