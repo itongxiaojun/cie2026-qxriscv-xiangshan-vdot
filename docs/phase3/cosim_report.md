@@ -11,11 +11,12 @@
 | 目标 | 手段 | 结论 |
 |---|---|---|
 | 证明自定义指令在指令集模拟器语义正确 | 在 NEMU（香山同源）中实现 `vdot.vv`，用 1513 条写回用例自测 | 1513/1513 与金标准一致 |
+| 复核边界配置的架构行为 | NEMU 边界自检：vl=0 不写回；4 类非法配置各触发 1 次 `EX_II` | 均 PASS |
 | 证明 RTL 与 NEMU 逐位一致 | 同一用例集分别驱动 RTL 与 NEMU，直接 diff 结果 | 1513 vs 1513，0 mismatch |
 | 量化"有/无该指令"的代价差 | 用纯 RVV 1.0 组合序列实现同语义基线，在 NEMU 上跑通并计数 | 数据通路指令 6→1；单用例核心指令 14→7 |
 | 给出实测性能口径 | Verilator 单元测试台统计延迟/吞吐 | 延迟 3 cycle，吞吐 1 inst/cycle |
 
-**不在范围**：香山昆明湖 V2 平台上的真实周期数与加速比（B1 已关闭，B2 集成与 B3 测量尚未执行）。
+**不在范围**：香山昆明湖 V2 平台上的真实周期数与加速比（2026-11-03 已在 `emu` 上完成，见 [性能分析 §6](file:///home/dbqxxs/xsriscv/cieriscv/docs/phase3/perf_analysis.md)；本报告仍只覆盖 NEMU/RTL 协同与单元级口径）。
 
 ---
 
@@ -27,7 +28,7 @@
 - 测试镜像由纯 Python 手写汇编器生成（`tests/as/mini_asm.py`）；阶段一迁移后 RISC-V 交叉工具链已可用（`.tools/riscv`），此处保留原生成方式以保证镜像与历史结果可复现
 
 ```bash
-# 1) NEMU 单指令自测 + 金标准比对（同时导出 tb 用子集）
+# 1) NEMU 单指令自测 + 金标准比对 + vl=0/非法配置边界自检（同时导出 tb 用子集）
 python3 tests/run_nemu_cosim.py
 # 2) RTL 跑同一子集并导出逐用例结果
 ./build/obj_dir/tb_vdot build/nemu/cosim_vectors.txt - docs/phase3/02_rtl_export.txt
@@ -43,15 +44,17 @@ python3 tests/run_nemu_baseline.py
 
 ## 3. NEMU 扩展改动
 
-补丁：`patches/nemu-vdot.patch`（3 文件，+44 行）
+补丁：`patches/nemu-vdot.patch`（3 文件，+42 行）
 
 | 文件 | 改动 |
 |---|---|
 | `src/isa/riscv64/instr/rvv/decode.h` | 在 `def_THelper(vopivv)` 增加 `"111111 ? ????? ????? ??? ????? ????? ??"` → `vdot` |
 | `src/isa/riscv64/include/isa-all-instr.h` | `VECTOR_INSTR_TERNARY(vdot)` 注册 |
-| `src/isa/riscv64/instr/rvv/vcompute.h` | 新增 `def_EHelper(vdot)`：校验 `vsew==0 && vlmul==0 && vm==1`，否则 `EX_II`；按 `int8` 取 K=8 个 lane 做有符号乘累加；`vd[31:0]=sum`（按位，不做符号扩展），`vd[127:32]=0` |
+| `src/isa/riscv64/instr/rvv/vcompute.h` | 新增 `def_EHelper(vdot)`：校验 `vsew==0 && vlmul==0 && vm==1`，否则 `EX_II`；`vstart >= vl`（含 `vl==0`）不写回正常退休；否则按 `int8` 取 K=8 个 lane 做有符号乘累加，`vd[31:0]=sum`（按位，不做符号扩展），`vd[127:32]=0`；`vstart != 0` 时按设计做幂等重算 |
 
 写回实现要点：直接按 64 bit 字写 `vreg_l()` 并显式清零高位。早期使用 `set_vreg(idx=1..15, vsew=2)` 的写法在 VLEN=128/SEW=32 下会被换算成 `reg+3`，污染相邻向量寄存器，已废弃。
+
+> **2026-11-03 补丁复核**：补丁已由当前 NEMU 工作树 `git diff` 重新生成，`git apply` 可直接复现。`vcompute.h` 内不使用 `return` 收尾——`CONFIG_PERF_OPT` 会把 EHelper 线程化展开进 `execute()`，提前 `return` 会跳过 PC 推进并导致该指令无限重放；实现统一改为 if/else 结构。
 
 ---
 
@@ -68,6 +71,8 @@ python3 tests/run_nemu_baseline.py
 | 与金标准不符 | 0 |
 | 多余输出 | 0 |
 | NEMU 退出码 | 0（`nemu_trap` code 0，GOOD TRAP） |
+| 边界：`vl=0` 不写回（`vd` 保持哨兵 `11223344`） | 1/1 PASS |
+| 边界：非法配置触发 `EX_II`（vm=0 / e16 / e64 / m2） | 4/4 PASS |
 | **判定** | **PASS** |
 
 ### 4.2 T3.4 RTL ↔ NEMU 直接 diff
@@ -111,15 +116,15 @@ RTL 单元测试台日志：`docs/phase3/04_rtl_unit_perf.log`
 |---|---|---|
 | 单条延迟 | 3 cycle | `in_valid` 拉高到 `out_valid` 的周期数 |
 | 流式吞吐 | 1.0 inst/cycle | 连续 1024 条背靠背发射，`(完成数-1)/(末-首完成周期)` |
-| 1024 条总周期 | 10113 | 含排空 |
+| 全测试台总周期 | 10185 | 1513 用例 + 1024 流式 + 补充自检 + 排空 |
 | 功能用例 | 1513/1513 PASS | 同 4.1 用例集 |
 
-NEMU 动态指令数（同一 1513 用例镜像）：
+NEMU 动态指令数（同一 1513 用例镜像；日志字段 `nemu_dyn_instr`，见 `01_nemu_cosim.log` 与 `03_baseline_nemu.log`）：
 
 | 实现 | 动态指令数 | 相对 |
 |---|---|---|
 | `vdot.vv` | 78,701 | 基准 |
-| RVV 组合基线 | 89,294 | +10,593（+13.5%），≈ 7.0 条/用例 |
+| RVV 组合基线 | 89,294 | +10,593（相对 vdot +13.5%，相对基线 −11.9%），≈ 7.0 条/用例 |
 
 注：动态指令数含 UART 十六进制打印等测试脚手架开销，故绝对比例偏保守；纯算法部分的差异为上表"14 vs 7"。
 
@@ -139,14 +144,18 @@ NEMU 动态指令数（同一 1513 用例镜像）：
    现象为 `vmv.x.s` 读出 `ffffffff`。测试程序改用 undisturbed（`vta=vma=0`），语义不受影响（vl=VLMAX、无掩码）。
 5. **`vsext.vf2` 编码组号**
    该指令属 `vxunary0` 组 funct6=`010010`（非 `010000`），基线实现据此修正。
+6. **NEMU 线程化执行模式下 EHelper 不能 `return`**
+   `CONFIG_PERF_OPT` 会把 EHelper 展开进 `execute()`，`return` 会跳过 PC 推进，使该指令被无限重放。`vdot` 改为 if/else 收尾，补丁已同步。
 
 ---
 
 ## 6. 结论与表述约束
 
 - `vdot.vv` 的 NEMU 语义实现与金标准、RTL 三方一致（1513/1513，0 mismatch）。
+- NEMU 边界自检通过：`vl=0` 不写回，4 类非法配置各触发一次 `EX_II`。
 - 相对纯 RVV 1.0 组合基线，数据通路指令数 6→1，单用例核心指令数 14→7。
-- 以上均为 **指令级仿真与单元级 RTL** 证据。在 B1/B2/B3 关闭前，**不宣称"已在香山平台验证"或给出"实测加速比"**。
+- 覆盖分工：1518 条向量中 5 条不写回（1 条 `vl=0` + 4 条非法），由 RTL 全量回归、本报告边界自检与香山 emu 汇编用例分别覆盖；1513 条写回用例用于 NEMU↔金标准↔RTL 三方逐位比对。
+- 本报告只覆盖 **指令级仿真与单元级 RTL**；香山昆明湖 V2 `emu` 上的整程序周期与加速比见 [`perf_analysis.md` §6](file:///home/dbqxxs/xsriscv/cieriscv/docs/phase3/perf_analysis.md)。
 
 ## 7. 附件
 

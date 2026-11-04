@@ -1,0 +1,46 @@
+# 阶段一 · 环境搭建与 RTL 链路贯通
+# 命令与输出均为本机真实执行（长耗时步骤为已捕获日志回放）
+
+$ uname -m
+python3 --version
+.tools/riscv/bin/riscv-none-elf-gcc --version | head -1
+.tools/verilator/bin/verilator --version
+x86_64
+Python 3.13.5
+riscv-none-elf-gcc (xPack GNU RISC-V Embedded GCC x86_64) 15.2.0
+Verilator 5.034 2025-02-24 rev v5.034
+
+$ git -C build/xs-work/XiangShan rev-parse --short HEAD
+git -C .tools/nemu rev-parse --short HEAD
+16ae9dd
+a683e0b
+
+$ ls -lh build/xs-work/XiangShan/build/emu build/phase1/hello.bin build/phase1/vadd.bin
+-rwxrwxr-x 1 dbqxxs dbqxxs   98 Nov  1 23:46 build/phase1/hello.bin
+-rwxrwxr-x 1 dbqxxs dbqxxs  112 Nov  1 23:46 build/phase1/vadd.bin
+-rwxrwxr-x 1 dbqxxs dbqxxs 107M Nov  3 13:34 build/xs-work/XiangShan/build/emu
+
+$ build/xs-work/XiangShan/build/emu -i build/phase1/hello.bin \
+  --diff=.tools/nemu/build/riscv64-nemu-interpreter-so
+hello xiangshan, I am qxriscv, IP address: 192.168.0.168
+Core 0: HIT GOOD TRAP at pc = 0x80000020
+Core-0 instrCnt = 295, cycleCnt = 10,819, IPC = 0.027267
+
+$ build/xs-work/XiangShan/build/emu -i build/phase1/vadd.bin \
+  --dump-wave -b 8200 -e 8360 --wave-path=/tmp/vadd_wave.vcd
+    --dump-wave -b 8200 -e 8360 --wave-path=/tmp/vadd_wave_r2.vcd
+  /tmp/vadd_wave_r2.vcd  100,664,602 B  （VCD，时间戳 = difftest cycleCnt，窗口 8200–8360）
+  说明：100 MB 原始 VCD 不入库（.gitignore 已排除 *.vcd），仓库内保留：
+  --dump-wave          打开波形 dump（该 emu 以 EMU_TRACE=vcd 构建，产物为 VCD）
+  -b 8200 -e 8360      只采集 cycle 8200…8360；不限定窗口会生成 1.5 GB 级 VCD
+
+$ grep -nE '取指|译码|发射|执行|写回|提交' docs/phase1/vadd_wave.md
+ls -lh docs/phase1/wave/vadd_pipeline_wave.png
+| 取指 | 8246 起 | `frontend.inner_ibuffer.outputEntries_0_valid/bits_pc/bits_inst` | 8246 `0x80000000 / 0x000022b7` |
+| 译码 | **8285** | `backend.inner_ctrlBlock.decodePipeRenameModule.io_in_valid/pc/instr` | `0x8000002e / 0x021101d7`（`vadd.vv v3,v1,v2`） |
+| 发射执行 | **8323 → 8324** | `backend.inner_vfExuBlock.exus_2.VialuFix.io_in_valid / io_out_valid` | 入 `fuOpType=0x040`、`vsew=0b00`；出一拍后 `res=0x2e2c…10` |
+| 访存（加载） | 8317 | `memBlock.io_mem_to_ooo_writebackVldu_0/1_valid` | `v1=00..0f`、`v2=10..1f` 同时写回，`fuOpType=0x080`（`VlduType.vle`），`vl=16` |
+| 访存（存储） | 8332 → 8336 | `memBlock.inner_StoreUnit_1.io_vecstin/dcache_req/s3_valid/io_vecstout` | `vecstin` 8332、`dcache_req` 8332、`s3_valid` 8335、`vecstout` 8336，地址 `0x80000060` |
+| 写回（存储 uop） | 8339 | `writebackVldu_1_valid` | `fuOpType=0x100`（`VstuType.vse`），`vecWen=0`，`vl=16` |
+| 提交 | 8351 | difftest + `HIT GOOD TRAP` | `pc=0x80000038`，`instrCnt=18`，`cycleCnt=8,351` |
+-rw-rw-r-- 1 dbqxxs dbqxxs 369K Nov  1 23:54 docs/phase1/wave/vadd_pipeline_wave.png

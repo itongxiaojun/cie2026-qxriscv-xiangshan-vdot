@@ -50,7 +50,7 @@
 | 香山源码 + emu | 可用 | `build/xs-work/XiangShan` @ `16ae9dd` | 阶段一运行与波形采集、后续香山内集成 |
 | NEMU | 可用 | `.tools/nemu`，commit `a683e0b` + `patches/nemu-vdot.patch` | NEMU 自测、协同仿真、基线计数 |
 | yosys | **缺失** | — | generic 综合**无法在本机复跑**（`docs/phase4/01_yosys_synth.log` 为历史证据） |
-| sbt / Scala | **缺失** | — | `rtl/chisel/VDot.scala` 仍未编译校验 |
+| Chisel 工具链 | 可用 | Chisel 6.6.0 + firtool 1.62.1（本地 coursier 缓存） | `rtl/chisel` 编译、elaboration 与 SystemVerilog 生成 |
 | PDK 库 / DC / Genus | **缺失** | — | 面积（µm²）与时序（ns）签核 |
 | GTKWave | **缺失** | — | 本次以 VCD + 自写脚本出图，未用 GUI |
 
@@ -253,7 +253,7 @@ make emu -j8 EMU_TRACE=fst JVM_XMX=12G
 | 程序结束 | 必须用 `nemu_trap`（`.word 0x0005006b`，`a0=0`）；`ebreak` 会 double trap |
 | 波形窗口 | 不限定 `-b/-e` 会生成 1.5 GB 级 VCD；本次限定 8200–8360 |
 | VCD 解析 | `$scope/$var/$upscope/$enddefinitions` 行首带空格，必须 `strip()` |
-| 仍缺工具 | yosys / sbt / PDK 未就位 → generic 综合与 Chisel 版编译校验仍不可复跑 |
+| 仍缺工具 | yosys / PDK / sbt 未就位 → generic 综合与 PDK 签核仍不可复跑；Chisel 版已改用 mill + 缓存 firtool 编译（不依赖 sbt） |
 | xs-env | 非官方镜像的逐字节复现，仅为同版本组件的手工对齐 |
 
 ## 8. 关联文档

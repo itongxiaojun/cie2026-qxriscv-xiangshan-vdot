@@ -10,4 +10,5 @@ cases_observed   : 1513
 cases_fail       : 0
 cases_extra      : 0
 nemu_exit_code   : 0
+nemu_dyn_instr   : 89,294
 RESULT           : PASS

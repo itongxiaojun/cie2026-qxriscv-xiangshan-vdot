@@ -1,0 +1,11 @@
+emu compiled at Nov  3 2026, 12:26:15
+Using simulated 32768B flash
+Using simulated 8386560MB RAM
+The image is /tmp/perf2k/perf_rvv.bin
+The reference model is /home/dbqxxs/xsriscv/cieriscv/.tools/nemu/build/riscv64-nemu-interpreter-so
+The first instruction of core 0 has commited. Difftest enabled. 
+PERF result=OK
+Core 0: HIT GOOD TRAP at pc = 0x800000a4
+Core-0 instrCnt = 8,119, cycleCnt = 23,109, IPC = 0.351335
+Seed=0 Guest cycle spent: 23,113 (this will be different from cycleCnt if emu loads a snapshot)
+Host time spent: 698,355ms

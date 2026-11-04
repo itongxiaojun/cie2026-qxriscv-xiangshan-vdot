@@ -5,5 +5,5 @@ make: 对“default”无需做任何事。
 make: 离开目录“/home/dbqxxs/xsriscv/cieriscv/build/obj_dir”
 - V e r i l a t i o n   R e p o r t: Verilator 5.034 2025-02-24 rev v5.034
 - Verilator: Built from 0.000 MB sources in 0 modules, into 0.000 MB in 0 C++ files needing 0.000 MB
-- Verilator: Walltime 0.011 s (elab=0.000, cvt=0.000, bld=0.010); cpu 0.001 s on 48 threads; alloced 7.664 MB
+- Verilator: Walltime 0.021 s (elab=0.000, cvt=0.000, bld=0.019); cpu 0.002 s on 48 threads; alloced 7.664 MB
 [build] OK: /home/dbqxxs/xsriscv/cieriscv/build/obj_dir/tb_vdot

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 全量一键回归：单元级 -> 严格 lint -> NEMU 自测 -> RTL↔NEMU 协同仿真 -> 基线
+# 全量一键回归：单元级 -> 严格 lint -> Chisel 等价性 -> NEMU 自测 -> RTL↔NEMU 协同仿真 -> 基线
 # 用法：bash scripts/run_all.sh
 # 输出：逐步 PASS/FAIL 汇总；任一步失败即返回非 0。中间日志写入 build/regress/。
 set -euo pipefail
@@ -37,13 +37,21 @@ else
   fails=$((fails + 1))
 fi
 
-# 3) NEMU 协同仿真：先跑 NEMU 与金标准比对，再用同一用例顺序驱动 RTL 并 diff
+# 3) Chisel 生成 RTL 与 Verilog 版在同一向量集上的等价性
+run_step "chisel" bash scripts/run_chisel_equiv.sh
+
+# 4) NEMU 协同仿真：先跑 NEMU 与金标准比对，再用同一用例顺序驱动 RTL 并 diff
 if [ -x "$NEMU" ]; then
+  # 补丁一致性：文档引用的 patch 必须能反向应用到当前 NEMU 工作树，防止文档与实现漂移
+  if ! git -C .tools/nemu apply --check --reverse "$ROOT/patches/nemu-vdot.patch" > /dev/null 2>&1; then
+    echo "   patch  : FAIL（patches/nemu-vdot.patch 与 .tools/nemu 工作树不一致）"
+    fails=$((fails + 1))
+  fi
   run_step "nemu" python3 tests/run_nemu_cosim.py --out "$OUT/01_nemu.log"
   run_step "rtl_export" ./build/obj_dir/tb_vdot build/nemu/cosim_vectors.txt - "$OUT/rtl_export.txt"
   run_step "cosim" python3 tests/run_nemu_cosim.py \
     --rtl-export "$OUT/rtl_export.txt" --out "$OUT/02_cosim.log"
-  # 4) 基线等价性与指令数对比
+  # 5) 基线等价性与指令数对比
   run_step "baseline" python3 tests/run_nemu_baseline.py --out "$OUT/03_baseline.log"
 else
   echo "== nemu ==  SKIP（未构建 $NEMU）"

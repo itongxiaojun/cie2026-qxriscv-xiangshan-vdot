@@ -1,0 +1,19 @@
+PERF result=OK
+[1;34m[src/isa/riscv64/init.c:266,init_isa] NEMU will start from pc 0x10000000[0m
+[1;34m[src/device/io/port-io.c:35,add_pio_map_with_diff] Add port-io map 'uart16550' at [0x00000000000003f8, 0x0000000000000417][0m
+[1;34m[src/device/io/port-io.c:35,add_pio_map_with_diff] Add port-io map 'uartlite' at [0x00000000000002f8, 0x0000000000000304][0m
+[1;34m[src/monitor/image_loader.c:219,load_img] Loading image (checkpoint/bare metal app/bbl) from cmdline: build/phase2/xs_emu/perf_empty.bin
+[0m
+[1;34m[src/monitor/image_loader.c:264,load_img] Read 288 bytes from file build/phase2/xs_emu/perf_empty.bin to 0x0x77c5c2e00000[0m
+[1;34m[src/monitor/monitor.c:63,welcome] Debug: [1;32mOFF[0m[0m
+[1;34m[src/monitor/monitor.c:68,welcome] Build time: 22:49:19, Nov  2 2026[0m
+Welcome to [1;41m[1;33mriscv64[0m-NEMU!
+For help, type "help"
+[1;34m[/home/dbqxxs/xsriscv/cieriscv/.tools/nemu/src/isa/riscv64/include/../instr/special.h:38,execute] nemu_trap case 0[0m
+[1;34m[src/cpu/cpu-exec.c:1080,cpu_exec] nemu: [1;32mHIT GOOD TRAP[0m at pc = 0x0000000080000098[0m
+[1;34m[src/cpu/cpu-exec.c:1086,cpu_exec] trap code:0[0m
+[1;34m[src/cpu/cpu-exec.c:178,monitor_statistic] host time spent = 632 us[0m
+[1;34m[src/cpu/cpu-exec.c:180,monitor_statistic] total guest instructions = 4,121[0m
+[1;34m[src/cpu/cpu-exec.c:186,monitor_statistic] vst count = 1, vst unit count = 1, vst unit optimized count = 0[0m
+[1;34m[src/cpu/cpu-exec.c:189,monitor_statistic] simulation frequency = 6,520,569 instr/s[0m
+[1;34m[src/utils/state.c:30,is_exit_status_bad] NEMU exit with good state: 2, halt ret: 0[0m

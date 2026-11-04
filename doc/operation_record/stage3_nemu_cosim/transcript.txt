@@ -1,0 +1,76 @@
+# 阶段三 · NEMU 扩展、协同仿真与加速评估
+# 命令与输出均为本机真实执行（长耗时步骤为已捕获日志回放）
+
+$ git -C .tools/nemu diff --stat
+git -C .tools/nemu apply --check --reverse "$PWD/patches/nemu-vdot.patch"
+ src/isa/riscv64/include/isa-all-instr.h |  1 +
+ src/isa/riscv64/instr/rvv/decode.h      |  4 ++++
+ src/isa/riscv64/instr/rvv/vcompute.h    | 37 +++++++++++++++++++++++++++++++++
+ 3 files changed, 42 insertions(+)
+PATCH CONSISTENT: reverse apply OK
+
+$ python3 tests/run_nemu_cosim.py --rtl-export docs/phase3/02_rtl_export.txt
+cases_expected   : 1513
+cases_observed   : 1513
+cases_fail       : 0
+cases_extra      : 0
+nemu_dyn_instr   : 78,701
+boundary_checks  : vl0=PASS(vd=11223344) illegal=PASS(traps=00000004, expect=4)
+rtl_vs_nemu      : lines=1513/nemu=1513 mismatch=0
+RESULT           : PASS
+
+$ python3 tests/run_nemu_cosim.py --rtl-export docs/phase3/02_rtl_export.txt
+cases_expected   : 1513
+cases_fail       : 0
+rtl_vs_nemu      : lines=1513/nemu=1513 mismatch=0
+RESULT           : PASS
+
+$ python3 tests/run_nemu_baseline.py
+  alu_op_ratio   : 6.0x
+cases_expected   : 1513
+cases_observed   : 1513
+cases_fail       : 0
+cases_extra      : 0
+nemu_dyn_instr   : 89,294
+RESULT           : PASS
+
+$ ./build/obj_dir/tb_vdot build/nemu/cosim_vectors.txt - docs/phase3/02_rtl_export.txt
+cases_total      : 1513
+latency_write    : 3 cycle
+latency_illegal  : 0 cycle
+throughput       : 1 inst/cycle
+total_cycles     : 10185
+RESULT           : PASS
+
+$ for k in empty vdot rvv scalar; do
+  for r in 1 2 3; do ./build/emu -i build/phase2/xs_emu/perf_$k.bin \
+    --diff=.tools/nemu/build/riscv64-nemu-interpreter-so; done; done
+阶段三 · 性能重复测量（G5）· 2026-11-04
+环境   : 香山 KunminghuV2 emu（Verilator 5.034，VLEN=128）
+参数   : NITER=2000，seed=0，循环前数据已入向量/标量寄存器，循环内无访存
+方法   : 每个内核独立运行 3 次，记录 Core-0 cycleCnt；
+         per_iter(k) = (median(C_k) - median(C_empty)) / 2000
+1) 原始 cycleCnt（12/12 次均 PERF result=OK 且 HIT GOOD TRAP）
+kernel   r1      r2      r3      median   range   range%   instrCnt
+empty    11108   11108   11108   11108    0       0.00%    4118
+vdot     12123   12123   12123   12123    0       0.00%    6118
+rvv      23109   23109   23109   23109    0       0.00%    8119
+scalar   21022   21022   21022   21022    0       0.00%    38135
+2) 每轮周期（扣除空循环）与加速比（均基于 median）
+kernel   per_iter (cycle/dot)
+empty    —（基准）
+vdot     0.5075
+rvv      6.0005
+scalar   4.9570
+vdot vs scalar = 4.9570 / 0.5075 = 9.77 ≈ 9.8×   （标量做 8 个乘积，lane 公平）
+vdot vs rvv    = 6.0005 / 0.5075 = 11.82 ≈ 11.8× （RVV 为 VLMAX=16，2× lane，属上界）
+rvv  vs scalar = 4.9570 / 6.0005 = 0.826 ≈ 0.83×  （RVV 基线比标量慢约 21%）
+实测：四个内核的 cycleCnt 三次完全相同，极差 = 0（0.00%），标准差 = 0
+结论：G5 通过。emu 周期数在固定二进制/固定 seed 下是确定性的，
+
+$ python3 -c "per_iter=(Ck-Cempty)/2000; speedup=per_iter(base)/per_iter(vdot)"
+vdot  : 0.5075 cycle/dot
+rvv   : 6.0005 cycle/dot
+scalar: 4.9570 cycle/dot
+vdot vs scalar = 9.77x  (lane 公平)
+vdot vs rvv    = 11.82x  (16-lane 上界)

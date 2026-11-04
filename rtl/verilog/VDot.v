@@ -32,7 +32,9 @@ module VDot #(
     /* verilator lint_on UNUSEDSIGNAL */
     input  logic              in_vl_zero,   // vl == 0：不写回
     input  logic              in_vm,        // vm == 1 才合法
-    input  logic [1:0]        in_sew,       // 0: e8（唯一合法）
+    // vtype.vsew 为 3 bit：0=e8（唯一合法），1=e16，2=e32，3=e64，4..7 保留。
+    // 接口必须保留全部 3 bit，否则保留编码（如 vsew=4）被截断成 0 而误判合法。
+    input  logic [2:0]        in_sew,
     input  logic [2:0]        in_lmul,      // 0: m1（唯一合法）
 
     // 写回侧
@@ -53,7 +55,7 @@ module VDot #(
   // 合法性判定：仅支持 vm=1 / SEW=8 / LMUL=1
   //--------------------------------------------------------------------------
   logic legal;
-  assign legal = in_vm && (in_sew == 2'd0) && (in_lmul == 3'd0);
+  assign legal = in_vm && (in_sew == 3'd0) && (in_lmul == 3'd0);
 
   //--------------------------------------------------------------------------
   // EX1：K 路有符号 8x8 乘法

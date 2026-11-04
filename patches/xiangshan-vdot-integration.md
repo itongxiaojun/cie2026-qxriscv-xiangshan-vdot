@@ -1,12 +1,14 @@
 # 香山昆明湖 V2 集成说明（VDot / vdot.vv）
 
-> **状态：未执行（UNVERIFIED）**
-> 本文是集成**操作规程**，不是"已完成集成"的记录。当前工作区已检出香山源码（`build/xs-work/XiangShan` @ `16ae9dd`）、具备 RISC-V 工具链与 emu（阶段一已闭环），但**集成本身尚未执行**，因此：
-> - 文中所有文件路径、类名、方法名均为**按香山通用结构的推断**，必须用文中给出的 grep 命令逐一核实后回填；
-> - 任何一条都不得在未核实的情况下直接粘贴进源码；
-> - 集成完成后必须重跑既有向量回归，确认零回归，并把结果补进 [阶段二测试报告](file:///home/dbqxxs/xsriscv/cieriscv/docs/phase2/test_report.md)（替换 U-01）。
+> **状态：已执行并验证（2026-11-03，VERIFIED）**
+> 已在 `build/xs-work/XiangShan` @ `16ae9dd`（KunminghuV2 配置，VLEN=128）完成 I1–I7：新增 `FuType.vdot`、
+> 译码 pattern、`VdotCfg`/VFEX0 注册与 `VDotUnit`（`VecPipedFuncUnit`），重新生成 RTL 并重建 emu。
+> 系统级结果：定向用例 7/7（difftest 0 mismatch）、非法配置 5/5、性能四内核全部 `PERF result=OK`。
 >
-> 已冻结、可直接复用的部分是数据通路本身：[rtl/verilog/VDot.v](file:///home/dbqxxs/xsriscv/cieriscv/rtl/verilog/VDot.v)（已验证）与 [rtl/chisel/VDot.scala](file:///home/dbqxxs/xsriscv/cieriscv/rtl/chisel/VDot.scala)（同语义骨架，未编译）。
+> 实际文件与符号见 §8 核对表；实测数据与证据链见 §10。文中 §2/§3/§5 的示例代码是**原始设计意图**，
+> 落地时有两处必须按 §5 的修正说明实现（`vtype` 来源、`vl==0` 写回），否则会出现 D-07/D-08 两个集成缺陷。
+>
+> 已冻结、可直接复用的部分是数据通路本身：[rtl/verilog/VDot.v](file:///home/dbqxxs/xsriscv/cieriscv/rtl/verilog/VDot.v)（已验证）与 [rtl/chisel/VDot.scala](file:///home/dbqxxs/xsriscv/cieriscv/rtl/chisel/VDot.scala)（已编译并生成 `VDotCore.sv`，同向量等价回归 1518/1518，见 `docs/phase2/logs/09_chisel_equiv.log`）。
 
 ---
 
@@ -110,19 +112,74 @@ grep -rn "100000\|funct6\|Pattern(" src/main/scala/xiangshan/frontend --include=
 
 ## 5. Step D：配置校验（I6）
 
-`SEW != 8`、`LMUL != 1`、`vm == 0` 三条必须在**译码期或发射前**判定为 illegal-instruction，而不是在功能单元里静默丢弃：
+`SEW != 8`、`LMUL != 1`、`vm == 0`、`vill`、`vstart != 0` 必须在**功能单元输出级**上报 illegal-instruction
+（香山昆明湖 V2 的向量 FU 允许在写回端口携带 `exceptionVec(illegalInstr)`，提交时抛异常）。
 
-- 译码期判定：uop 带 `illegal` 标记，进入异常路径，不进入 VFu；
-- 若框架只能在 VFu 内上报，则用 `core.io.out.illegal` 驱动对应异常通路，并确保**不产生写回**。
+### 5.1 vtype 必须取自控制通路，不能取自 `VlData`
 
-`vl == 0` 与上述不同：它是合法指令，只是无元素写入 —— 用 `io.in.vlZero` 驱动 `out_valid=0`。
+`FuConfig` 里 `vconfigWakeUp = true` 时，`VecPipedFuncUnit.outVConfig` 来自数据源
+`DataConfig.VlData`。但 **`VlData` 宽度只有 8 bit（只承载 `vl`）**：
+
+```scala
+// DataConfig.scala
+object VlData extends DataConfig("Vl", 0, Some(Log2Up(VecData().dataWidth) + 1)) // = 8
+```
+
+因此 `outData.getSrcVConfig.asTypeOf(new VConfig)` 的 `vtype` 字段恒为 0，firtool 会把它整个优化掉——
+生成的 `VDotUnit.sv` 里根本没有 `vsew/vlmul/vill` 端口，`illegalOut` 退化成 `~vm | (|vstart)`（缺陷 D-08）。
+
+正确来源是控制通路（与 `VIAluFix` 一致）：
+
+```scala
+private val cfgIllegal = outVecCtrl.vill ||
+  outVecCtrl.vsew =/= VSew.e8 ||
+  outVlmul        =/= VLmul.m1 ||
+  !outVm
+```
+
+### 5.2 `vl == 0` 不能屏蔽写回，必须回写 `oldVd`
+
+`vl == 0` 是合法指令，但"不产生写回"在香山行不通：提交阶段会把架构 `vd` 的映射改到重命名后的
+物理寄存器，而该寄存器从未被写 → 架构值变成随机数（缺陷 D-07，emu 上表现为 `v3` 为随机值）。
+
+正确写法与 `VIAluFix` 相同——写回端口保持有效，只把数据换成旧值：
+
+```scala
+private val outVstartGeVl = outVstart >= outVl
+io.out.bits.res.data := Mux(outVstartGeVl, outOldVd, vdOut)
+io.out.bits.ctrl.exceptionVec.get(illegalInstr) := cfgIllegal || (outVstart =/= 0.U)
+io.out.bits.ctrl.vecWen.foreach(_ := outCtrl.vecWen.get)   // 不再用 vl/illegal 抑制
+```
+
+非法配置时仍然写回，但提交阶段抛异常、不更新架构状态，因此无副作用。
 
 ---
 
 ## 6. Step E：构建与仿真
 
+本轮实际使用（在 `build/xs-work/XiangShan` 下）：
+
 ```bash
-# 编译（以 xs-env 官方命令为准）
+export NOOP_HOME=$(pwd) JAVA_HOME=$PWD/../../../.tools/jdk
+export PATH=$PWD/../../../.tools/verilator/bin:$PWD/../../../.tools/bin:$PATH
+
+# RTL（约 7 min 增量 / 27 min 全量，取决于主机负载）
+mill -i -Djvm-xmx=12G -Djvm-xss=256m xiangshan.test.runMain top.SimTop \
+  --target-dir build/rtl --config DefaultConfig --issue E.b --num-cores 1 \
+  --dump-fir --target systemverilog --split-verilog --enable-difftest --full-stacktrace \
+  --firtool-opt "--repl-seq-mem --repl-seq-mem-file=SimTop.sv.conf" \
+  --firtool-opt "-O=release --disable-annotation-unknown --lowering-options=explicitBitcast,disallowLocalVariables,disallowPortDeclSharing,locationInfoStyle=none"
+
+# emu（verilator 生成 + C++ 编译，-j48 约 35 min）
+rm -rf build/emu-compile
+make -C ./difftest emu -j48 SIM_TOP=SimTop DESIGN_DIR=$(pwd) NUM_CORES=1 RTL_SUFFIX=sv
+```
+
+**两个易踩的坑**：① 不设 `NOOP_HOME` 时 difftest 的 `FileControl.write` 会在收尾阶段失败；
+② `verilator` 必须在 `PATH` 中，否则 Makefile 回落到 `VERILATOR_LEGACY` 并报找不到命令。
+
+```bash
+# 编译（以 xs-env 官方命令为准，等价写法）
 make -C XiangShan sim-verilog   # 或 mill 等效命令
 
 # 单条 vdot 的最小验证（示例，需按实际 emu 用法调整）
@@ -160,17 +217,35 @@ EOF
 
 ---
 
-## 8. 集成点核对表（执行后回填）
+## 8. 集成点核对表（2026-11-03 已回填）
 
-| # | 集成环节 | 实际文件 | 实际符号 | 核实时间 | 状态 |
-|---|---|---|---|---|---|
-| I1 | 译码 | | | | 待核实 |
-| I2 | uop 类型 | | | | 待核实 |
-| I3 | 功能单元 | | | | 待核实 |
-| I4 | 发射/忙表 | | | | 待核实 |
-| I5 | 写回 | | | | 待核实 |
-| I6 | 配置校验 | | | | 待核实 |
-| I7 | 参数开关 | | | | 待核实 |
+路径均相对 `build/xs-work/XiangShan/src/main/scala/xiangshan/`。
+
+| # | 集成环节 | 实际文件 | 实际符号 | 状态 |
+|---|---|---|---|---|
+| I1 | 译码 | `backend/decode/VecDecoder.scala` | `VDOT_VV = BitPat("b1111111??????????000?????1010111")` → `OPIVV(FuType.vdot, ...)` | 已核实 |
+| I2 | uop 类型 | `backend/fu/FuType.scala` | `FuType.vdot`，`needVecCtrl`/`isVecArith` 均包含 | 已核实 |
+| I3 | 功能单元 | `backend/fu/wrapper/VDotUnit.scala` | `class VDotUnit(cfg) extends VecPipedFuncUnit(cfg)`（K=8，ACC_W=20，OUT_W=32） | 已核实 |
+| I4 | 发射/忙表 | `backend/fu/FuConfig.scala` | `VdotCfg`：`srcData = Seq(Seq(VecData(), VecData(), VecData(), V0Data(), VlData()))`、`piped=true`、`latency=CertainLatency(3)`、`vconfigWakeUp=true`、`maskWakeUp=true`、`writeVecRf=true`、`destDataBits=128`、`exceptionOut=Seq(illegalInstr)`；`allConfigs` 与 `VecArithFuConfigs` 已加入 | 已核实 |
+| I5 | 写回 | `backend/fu/FuncUnit.scala` + `VDotUnit` | `io.out.bits.ctrl.vecWen`（恒随 `outCtrl.vecWen`）、`res.data = Mux(vstart>=vl, oldVd, vdOut)` | 已核实 |
+| I6 | 配置校验 | `backend/fu/wrapper/VDotUnit.scala` | `cfgIllegal = vill \|\| vsew =/= VSew.e8 \|\| vlmul =/= VLmul.m1 \|\| !vm`；`exceptionVec(illegalInstr) := cfgIllegal \|\| (vstart =/= 0)` | 已核实（修正 D-08） |
+| I7 | 参数开关 | `Parameters.scala` | VFEX0 的 `exuConfigs` 加入 `VdotCfg` | 已核实 |
+
+**生成 RTL 反查**（`build/rtl/VDotUnit.sv`，用于确认没有信号被优化掉）：
+
+```systemverilog
+assign io_out_bits_ctrl_vecWen = io_in_bits_ctrlPipe_3_vecWen;
+assign io_out_bits_ctrl_exceptionVec_2 =
+    io_in_bits_ctrlPipe_3_vpu_vill | (|io_in_bits_ctrlPipe_3_vpu_vsew)
+  | (|io_in_bits_ctrlPipe_3_vpu_vlmul) | ~io_in_bits_ctrlPipe_3_vpu_vm
+  | (|io_in_bits_ctrlPipe_3_vpu_vstart);
+assign io_out_bits_res_data =
+  io_in_bits_ctrlPipe_3_vpu_vstart >= io_in_bits_dataPipe_3_src_4
+    ? io_in_bits_dataPipe_3_src_2          // oldVd，vl==0 时保持原值
+    : {96'h0, {12{_sumAll_T[19]}}, _sumAll_T};
+```
+
+若生成的端口里没有 `vpu_vsew/vpu_vlmul/vpu_vill`，即说明又走回了 `VlData`（见 §5.1）。
 
 ---
 
@@ -185,3 +260,24 @@ EOF
 | R5 | 上游漂移导致回归难判定 | B0 与 B1 结果不一致 | 严格执行版本锁定表 |
 
 **回滚方式**：所有改动均为新增文件 + 少量注册行，回滚只需移除新增文件并撤销注册行（建议每个集成环节单独一次提交，便于二分定位）。
+
+---
+
+## 10. 执行结果与证据（2026-11-03）
+
+环境：香山 @ `16ae9dd`（DefaultConfig=KunminghuV2），Chisel 6.6.0 / mill 0.12.3 / firtool 1.62.1，
+Verilator 5.034，NEMU 扩展作 difftest 参考模型，`--ram-size` 默认。
+
+| 用例 | 运行方式 | 结果 | 日志 |
+|---|---|---|---|
+| `vdot_directed`（7 用例，含 `vl=0`） | emu + difftest | `DIRECTED fails=00000000`，`HIT GOOD TRAP`，992 inst / 13,565 cyc，0 mismatch | `docs/phase2/logs/xs_emu_vdot_directed.log` |
+| `vdot_illegal`（5 类非法配置） | emu `--no-diff`（架构自检） | `ILLEGAL traps=00000005 other=00000000`，`HIT GOOD TRAP`，10,429 cyc | `docs/phase2/logs/xs_emu_vdot_illegal.log` |
+| 普通非法指令（对照） | emu + difftest | 在陷阱指令处报 CSR 不一致（`mepc/mcause`），DUT 侧结果正确 | `docs/phase2/logs/xs_emu_baseline_illegal_difftest.log` |
+| `perf_empty/vdot/rvv/scalar` | emu + difftest | 四个内核均 `PERF result=OK`、`HIT GOOD TRAP` | `docs/phase2/logs/xs_emu_perf_*.log` |
+
+实测加速比（NITER=2000，per-iter 扣空循环）：vdot 0.51 cyc / 标量 4.96 cyc / RVV 基线 6.00 cyc，
+即 **对标量 9.8×（lane 公平）、对 RVV 基线 11.8×（16-lane，上界）**，详见 `docs/phase3/perf_analysis.md` §6。
+
+**difftest 已知边界**：本 emu 构建中，陷阱指令提交时 DUT 已更新 `mepc/mcause/mstatus`，而参考模型在同一
+比较点仍是旧值（用 `.word 0` 的普通非法指令即可复现，见上表第 3 行），因此非法配置用例改用程序内自检。
+这不是本模块的问题，也不影响合法路径的 0 mismatch 结论。

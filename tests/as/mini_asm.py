@@ -24,9 +24,12 @@ UART_MMIO = 0x310B0000
 CASE_SIZE = 32          # 16B vs1 + 16B vs2
 HEXTAB = b"0123456789abcdef"
 CSR_MSTATUS = 0x300
+CSR_MTVEC = 0x305
+CSR_MEPC = 0x341
 
 # ---------------- 通用寄存器编号 ----------------
 X0, T0, T1, T2, S0, S1, S2, S3 = 0, 5, 6, 7, 8, 9, 18, 19
+S4 = 20
 T4, T5, T6, A0, A1 = 29, 30, 31, 10, 11
 V0, V1, V2, V3 = 0, 1, 2, 3
 V4, V6, V8, V10 = 4, 6, 8, 10
@@ -114,6 +117,25 @@ class Asm:
         """CSRRS rd=x0, csr, rs1 —— 置位 CSR 中的位（x0 为目标表示只写）"""
         self._insn(lambda sym, pc, csr=csr, rs1=rs1: i_type(0x73, X0, 2, rs1, csr))
 
+    def csrw(self, csr, rs1):
+        """CSRRW rd=x0, csr, rs1 —— 直接写 CSR"""
+        self._insn(lambda sym, pc, csr=csr, rs1=rs1: i_type(0x73, X0, 1, rs1, csr))
+
+    def csrr(self, rd, csr):
+        """CSRRS rd, csr, x0 —— 读 CSR"""
+        self._insn(lambda sym, pc, rd=rd, csr=csr: i_type(0x73, rd, 2, X0, csr))
+
+    def mret(self):
+        self._insn(lambda sym, pc: 0x30200073)
+
+    def la(self, rd, target):
+        """地址装载：auipc rd, 0 + addi rd, rd, target-auipc_pc（目标需在 ±2 KiB 内）"""
+        self._insn(lambda sym, pc, rd=rd: u_type(0x17, rd, 0))
+        def f(sym, pc):
+            # auipc 的 pc 是当前 addi 的 pc-4，故偏移需 +4
+            return i_type(0x13, rd, 0, rd, sym[target] - pc + 4)
+        self._insn(f)
+
     def bne(self, rs1, rs2, target):
         def f(sym, pc):
             return b_type(0x63, 1, rs1, rs2, sym[target] - pc)
@@ -145,11 +167,11 @@ class Asm:
         self._insn(lambda sym, pc, vs3=vs3, rs1=rs1, imm=imm,
                    f3=f3: s_type(0x27, f3, rs1, vs3, imm | 0x20))
 
-    def vdot_vv(self, vd, vs2, vs1):
-        # funct6=111111（RVV 保留空间，本项目专用）, vm=1, funct3=000
+    def vdot_vv(self, vd, vs2, vs1, vm=1):
+        # funct6=111111（RVV 保留空间，本项目专用）, funct3=000
         def f(sym, pc):
-            return ((0x3F << 26) | (1 << 25) | ((vs2 & 0x1F) << 20) | ((vs1 & 0x1F) << 15)
-                    | (0 << 12) | ((vd & 0x1F) << 7) | 0x57)
+            return ((0x3F << 26) | ((vm & 1) << 25) | ((vs2 & 0x1F) << 20)
+                    | ((vs1 & 0x1F) << 15) | (0 << 12) | ((vd & 0x1F) << 7) | 0x57)
         self._insn(f)
 
     def vop_mvv(self, funct6, vd, vs2, vs1, funct3=2):
@@ -264,7 +286,8 @@ def build_image(cases, program=build_program):
     prog = program(code_bytes, n)
     code, sym = prog.encode()
     assert len(code) == prog.n_insn() * 4
-    assert sym["loop"] >= BASE_DEFAULT
+    if "loop" in sym:
+        assert sym["loop"] >= BASE_DEFAULT
 
     img = bytearray(code)
     img += b"\x00" * (code_bytes - len(img))

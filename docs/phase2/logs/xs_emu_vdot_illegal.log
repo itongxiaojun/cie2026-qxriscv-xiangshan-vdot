@@ -1,0 +1,9 @@
+emu compiled at Nov  3 2026, 12:26:15
+Using simulated 32768B flash
+Using simulated 8386560MB RAM
+The image is /home/dbqxxs/xsriscv/cieriscv/build/phase2/xs_emu/vdot_illegal.bin
+ILLEGAL traps=00000005 other=00000000
+Core 0: HIT GOOD TRAP at pc = 0x80000094
+Core-0 instrCnt = 332, cycleCnt = 10,429, IPC = 0.031834
+Host time spent: 297,118ms
+atency_max,                    0

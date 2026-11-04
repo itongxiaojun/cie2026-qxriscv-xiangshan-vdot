@@ -7,5 +7,7 @@ cases_observed   : 1513
 cases_fail       : 0
 cases_extra      : 0
 nemu_exit_code   : 0
+nemu_dyn_instr   : 78,701
+boundary_checks  : vl0=PASS(vd=11223344) illegal=PASS(traps=00000004, expect=4)
 rtl_vs_nemu      : lines=1513/nemu=1513 mismatch=0
 RESULT           : PASS

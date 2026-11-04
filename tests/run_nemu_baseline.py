@@ -98,6 +98,8 @@ def main():
     p = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     raw = p.stdout.decode("utf-8", "replace")
     lines = [ln for ln in raw.splitlines() if HEXLINE.match(ln)]
+    dyn = re.search(r"total guest instructions = ([0-9,]+)", raw)
+    dyn_instr = dyn.group(1) if dyn else "-"
 
     fails = []
     for i, c in enumerate(run):
@@ -124,6 +126,7 @@ def main():
         f"cases_fail       : {len(fails)}",
         f"cases_extra      : {extra}",
         f"nemu_exit_code   : {p.returncode}",
+        f"nemu_dyn_instr   : {dyn_instr}",
     ]
     for i, cid, why, exp, got in fails[:20]:
         report.append(f"  FAIL #{i} {cid} {why} exp={exp} got={got}")

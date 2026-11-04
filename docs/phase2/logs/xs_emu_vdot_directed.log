@@ -1,0 +1,18 @@
+emu compiled at Nov  3 2026, 12:26:15
+Using simulated 32768B flash
+Using simulated 8386560MB RAM
+The image is /home/dbqxxs/xsriscv/cieriscv/build/phase2/xs_emu/vdot_directed.bin
+The reference model is /home/dbqxxs/xsriscv/cieriscv/.tools/nemu/build/riscv64-nemu-interpreter-so
+The first instruction of core 0 has commited. Difftest enabled. 
+0 00000078 OK
+1 00020000 OK
+2 fffe0400 OK
+3 0001f808 OK
+4 ffffff34 OK
+5 00000078 OK
+6  OK
+DIRECTED fails=00000000
+Core 0: HIT GOOD TRAP at pc = 0x800001f6
+Core-0 instrCnt = 992, cycleCnt = 13,565, IPC = 0.073129
+Seed=0 Guest cycle spent: 13,569 (this will be different from cycleCnt if emu loads a snapshot)
+Host time spent: 379,559ms

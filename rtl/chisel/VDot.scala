@@ -23,7 +23,7 @@ class VDotIO(val VLEN: Int = 128, val OUTW: Int = 32) extends Bundle {
     val vs2    = UInt(VLEN.W)
     val vlZero = Bool()          // vl == 0：不写回
     val vm     = Bool()          // vm == 1 才合法
-    val sew    = UInt(2.W)       // 0 = e8
+    val sew    = UInt(3.W)       // vtype.vsew，0 = e8
     val lmul   = UInt(3.W)       // 0 = m1
   })
   val out = Output(new Bundle {
@@ -57,12 +57,12 @@ class VDotCore(
     Cat(Fill(pad, x(x.getWidth - 1)), x).asSInt
   }
 
-  /** 树形归约（log2(K) 级） */
+  /** 树形归约（log2(K) 级），每级显式截断到 ACCW，保证结果位宽可静态推断 */
   private def treeSum(ps: Seq[SInt]): SInt = {
     var cur: Seq[SInt] = ps.map(p => ext(p, ACCW))
     while (cur.length > 1) {
       cur = cur.grouped(2).map {
-        case Seq(a, b) => a + b
+        case Seq(a, b) => (a +& b)(ACCW - 1, 0).asSInt
         case Seq(a)    => a
       }.toSeq
     }
@@ -82,7 +82,6 @@ class VDotCore(
   //--------------------------------------------------------------------------
   // 流水寄存器
   //--------------------------------------------------------------------------
-  val s1Valid   = RegNext(io.in.valid, false.B)
   val s1Illegal = RegNext(io.in.valid && !legal, false.B)
   val s1Write   = RegNext(io.in.valid && legal && !io.in.vlZero, false.B)
   val s1Prod    = RegNext(prod)
@@ -90,10 +89,11 @@ class VDotCore(
   // EX2：加法树
   val sum2 = treeSum(s1Prod)
 
-  val s2Valid   = RegNext(s1Valid, false.B)
   val s2Illegal = RegNext(s1Illegal, false.B)
   val s2Write   = RegNext(s1Write, false.B)
-  val s2Sum     = RegNext(sum2)
+  // 累加结果为宽度推断节点；显式 RegInit 固定寄存器位宽，避免 RegNext 继承未知位宽
+  val s2Sum     = RegInit(0.S(ACCW.W))
+  s2Sum := sum2
 
   // WB：符号扩展 + 高位清零
   val vdPayload = Cat(0.U((VLEN - OUTW).W), ext(s2Sum, OUTW).asUInt)
@@ -107,7 +107,8 @@ class VDotCore(
   // 仿真断言
   //--------------------------------------------------------------------------
   when(io.out.valid) {
-    assert(io.out.vd(VLEN - 1, OUTW) === 0.U, "VDot: 高位通道必须为零")
-    assert(!io.out.illegal, "VDot: valid 与 illegal 不可同时有效")
+    // 断言消息必须是 ASCII：firtool 1.62.1 不支持 SystemVerilog 字符串中的 Unicode 转义
+    assert(io.out.vd(VLEN - 1, OUTW) === 0.U, "VDot: high lanes of vd must be zero")
+    assert(!io.out.illegal, "VDot: valid and illegal must not be together")
   }
 }

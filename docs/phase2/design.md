@@ -6,9 +6,9 @@
 | 目标平台 | 香山（XiangShan）昆明湖 V2，VLEN=128 |
 | 交付物对应 | 阶段二 2.1「vdot.vv 设计文档」 |
 | 规范性上游 | [ipd/01 指令与微架构设计规格书](file:///home/dbqxxs/xsriscv/cieriscv/ipd/01_vdot指令与微架构设计规格书.md)（需求条目、ADR、开放问题） |
-| 实现 | [rtl/verilog/VDot.v](file:///home/dbqxxs/xsriscv/cieriscv/rtl/verilog/VDot.v)（已验证）、[rtl/chisel/VDot.scala](file:///home/dbqxxs/xsriscv/cieriscv/rtl/chisel/VDot.scala)（集成用，未编译校验） |
-| 验证结论 | [阶段二测试报告](file:///home/dbqxxs/xsriscv/cieriscv/docs/phase2/test_report.md)：1518/1518 PASS，延迟 3 cycle，吞吐 1 inst/cycle |
-| 文档版本 | v1.1（2026-10-28，对齐阶段四 RTL 收口后的行号、信号与综合结果） |
+| 实现 | [rtl/verilog/VDot.v](file:///home/dbqxxs/xsriscv/cieriscv/rtl/verilog/VDot.v)（已验证）、[rtl/chisel/VDot.scala](file:///home/dbqxxs/xsriscv/cieriscv/rtl/chisel/VDot.scala)（已编译，生成 RTL 同向量回归 PASS） |
+| 验证结论 | [阶段二测试报告](file:///home/dbqxxs/xsriscv/cieriscv/docs/phase2/test_report.md)：1518/1518 PASS，延迟 3 cycle，吞吐 1 inst/cycle，行覆盖率 36/36 = 100%；Chisel 生成 RTL 同向量等价回归 1518/1518 |
+| 文档版本 | v1.2（2026-11-02，补充 Chisel 编译/等价回归、SEW 接口位宽修正与覆盖率证据） |
 
 ---
 
@@ -80,7 +80,7 @@ def vdot_vv(vd, vs1, vs2):
 | `vl == 0` | 不写 `vd`、不置 dirty、正常退休 |
 | `vl >= 1` | 写满 128 bit：`{96'b0, sext32(S)}`，与 `vl` 数值无关 |
 | `vm == 0` | illegal-instruction（显式拒绝未定义形态） |
-| `SEW != 8` | illegal-instruction |
+| `SEW != 8` | illegal-instruction（含 `vsew=4..7` 的保留编码） |
 | `LMUL != 1` | illegal-instruction（避免组内布局歧义） |
 | `vstart != 0` | 幂等重算：单元无状态，重放结果一致 |
 | `vta`/`vma` | 无关：输出固定写满 128 bit |
@@ -166,7 +166,7 @@ def vdot_vv(vd, vs1, vs2):
 | in | `in_valid` | 1 | 请求有效 |
 | in | `in_vs1`, `in_vs2` | 128 | 源寄存器 payload |
 | in | `in_vl_zero` | 1 | `vl==0`：不写回 |
-| in | `in_vm`, `in_sew[1:0]`, `in_lmul[2:0]` | 1/2/3 | 合法性判定输入 |
+| in | `in_vm`, `in_sew[2:0]`, `in_lmul[2:0]` | 1/3/3 | 合法性判定输入 |
 | out | `out_vd` | 128 | 写回数据 |
 | out | `out_valid` | 1 | 写回有效 |
 | out | `out_illegal` | 1 | 非法指令（不写回） |
@@ -174,18 +174,20 @@ def vdot_vv(vd, vs1, vs2):
 
 合法性判定为单行组合逻辑：`legal = in_vm && (in_sew == 0) && (in_lmul == 0)`。
 
+`in_sew` 必须保留完整 3 bit（与 `vtype.vsew` 同宽）：若只取低 2 bit，保留编码 `vsew=4`（`3'b100`）会被截断为 0 而误判为 e8。该问题已由 TC-E05 覆盖并在 v1.2 修正。
+
 ### 4.2 实现结构（与文件对应）
 
 | 功能块 | 位置 | 说明 |
 |---|---|---|
-| 参数自检 | [VDot.v#L45-L50](file:///home/dbqxxs/xsriscv/cieriscv/rtl/verilog/VDot.v#L45-L50) | `K`/`ACC_W`/`OUT_W` 越界即 `$fatal` |
-| 合法性判定 | [VDot.v#L52-L56](file:///home/dbqxxs/xsriscv/cieriscv/rtl/verilog/VDot.v#L52-L56) | 仅支持 `vm=1 / e8 / m1` |
-| 8 路乘法 | [VDot.v#L58-L72](file:///home/dbqxxs/xsriscv/cieriscv/rtl/verilog/VDot.v#L58-L72) | `generate` 展开 8 个 `8×8` 有符号乘 |
-| EX1→EX2 流水寄存器 | [VDot.v#L74-L92](file:///home/dbqxxs/xsriscv/cieriscv/rtl/verilog/VDot.v#L74-L92) | 保存 8 个乘积与控制位（`s1_illegal/s1_write`） |
-| EX2 加法树 | [VDot.v#L95-L119](file:///home/dbqxxs/xsriscv/cieriscv/rtl/verilog/VDot.v#L95-L119) | 8→4→2→1，常数索引展开，20 bit |
-| EX2→WB 流水寄存器 | [VDot.v#L121-L131](file:///home/dbqxxs/xsriscv/cieriscv/rtl/verilog/VDot.v#L121-L131) | 保存和与控制位（`s2_illegal/s2_write`） |
-| 写回格式化 | [VDot.v#L133-L152](file:///home/dbqxxs/xsriscv/cieriscv/rtl/verilog/VDot.v#L133-L152) | 符号扩展 + 96 bit 尾零 |
-| 仿真断言 | [VDot.v#L154-L169](file:///home/dbqxxs/xsriscv/cieriscv/rtl/verilog/VDot.v#L154-L169) | 高位清零、valid/illegal 互斥、dirty 伴随 valid |
+| 参数自检 | [VDot.v#L48-L52](file:///home/dbqxxs/xsriscv/cieriscv/rtl/verilog/VDot.v#L48-L52) | `K`/`ACC_W`/`OUT_W` 越界即 `$fatal` |
+| 合法性判定 | [VDot.v#L57-L58](file:///home/dbqxxs/xsriscv/cieriscv/rtl/verilog/VDot.v#L57-L58) | 仅支持 `vm=1 / e8 / m1` |
+| 8 路乘法 | [VDot.v#L63-L74](file:///home/dbqxxs/xsriscv/cieriscv/rtl/verilog/VDot.v#L63-L74) | `generate` 展开 8 个 `8×8` 有符号乘 |
+| EX1→EX2 流水寄存器 | [VDot.v#L82-L95](file:///home/dbqxxs/xsriscv/cieriscv/rtl/verilog/VDot.v#L82-L95) | 保存 8 个乘积与控制位（`s1_illegal/s1_write`） |
+| EX2 加法树 | [VDot.v#L100-L118](file:///home/dbqxxs/xsriscv/cieriscv/rtl/verilog/VDot.v#L100-L118) | 8→4→2→1，常数索引展开，20 bit |
+| EX2→WB 流水寄存器 | [VDot.v#L120-L133](file:///home/dbqxxs/xsriscv/cieriscv/rtl/verilog/VDot.v#L120-L133) | 保存和与控制位（`s2_illegal/s2_write`） |
+| 写回格式化 | [VDot.v#L138-L154](file:///home/dbqxxs/xsriscv/cieriscv/rtl/verilog/VDot.v#L138-L154) | 符号扩展 + 96 bit 尾零 |
+| 仿真断言 | [VDot.v#L159-L171](file:///home/dbqxxs/xsriscv/cieriscv/rtl/verilog/VDot.v#L159-L171) | 高位清零、valid/illegal 互斥、dirty 伴随 valid |
 
 两点实现说明：
 
@@ -200,7 +202,16 @@ def vdot_vv(vd, vs1, vs2):
 
 - `laneSInt` / `ext` / `treeSum` 分别对应 lane 切片、符号扩展与树形归约；
 - 三级 `RegNext` 对应 EX1/EX2/WB；
-- **状态**：当前环境无 sbt/Scala，**该文件未编译校验**，功能证据全部来自 Verilog 版仿真。接入香山时以该文件为骨架，按下节集成点替换为官方 `VFu` 基类。
+- **状态（v1.2 更新）**：已用 `.tools/jdk` + `.tools/bin/mill` + 缓存的 Chisel 6.6.0 / firtool 1.62.1 **编译通过并成功 elaboration、生成 SystemVerilog**（`rtl/chisel/VDotCore.sv`，214 行）；
+- 生成 RTL 经 `rtl/chisel/VDotWrap.v` 对齐端口后，复用同一测试台与同一 1518 条向量 + 1024 条背靠背 + 补充自检，结果 **1518/1518 PASS、3 cycle、1.0 inst/cycle**，与 Verilog 版一致（`docs/phase2/logs/09_chisel_equiv.log`）。
+
+编译过程中修正了 3 个仅在 Chisel 版暴露的问题（详见测试报告 §7）：
+
+1. `s2Sum = RegNext(sum2)` 对宽度推断节点会生成位宽未知的寄存器 → 改为显式 `RegInit(0.S(ACCW.W))`；
+2. 加法树各级 `+` 的位宽语义不显式 → 每级 `(a +& b)(ACCW-1,0)` 截断，确保静态可推断且与 Verilog 的 20 bit 加法一致；
+3. 断言消息含中文导致 firtool 1.62.1 拒绝（Unicode 转义不支持）→ 断言消息改为 ASCII。
+
+接入香山时仍以该文件为骨架，按下节集成点替换为官方 `VFu` 基类。
 
 ---
 
@@ -220,7 +231,7 @@ def vdot_vv(vd, vs1, vs2):
 
 **集成原则**：只做加法（新增文件 + 少量注册点），每完成一个环节跑一次既有向量冒烟测试，确保零回归。
 
-> **状态声明**：上述集成**尚未在香山源码上执行**（香山源码与工具链已就绪，集成待实施）。本设计文档中的"已验证"仅指模块级 RTL 仿真，不代表已在昆明湖 V2 上跑通。
+> **状态声明（2026-11-03 更新）**：上述集成已在香山 `16ae9dd` 源码上执行（I1–I7），RTL 重生成 + emu 重建完成，并跑通定向 7/7（difftest 0 mismatch）与非法配置 5/5。本文档中"已验证"的原始含义是模块级 RTL 仿真；系统级证据见 [测试报告 §8](file:///home/dbqxxs/xsriscv/cieriscv/docs/phase2/test_report.md) 与 `docs/phase2/logs/xs_emu_*.log`。
 
 ---
 
@@ -232,7 +243,13 @@ def vdot_vv(vd, vs1, vs2):
 | 随机 + 边界密集 | 1500/1500 PASS | 测试报告 §4.4 |
 | 背靠背流式 | 1024/1024 PASS | 测试报告 §4.4 |
 | 三方模型一致性 | 1518/1518 | `logs/06_c_model_crosscheck.log` |
-| 延迟 / 吞吐 | 3 cycle / 1.0 inst/cycle | 测试报告 §5 |
+| 逐 lane 定位（lane0..7 单独非零） | 8/8 PASS | `logs/03_unit_test.log`（`lane_checks`） |
+| `vstart` 幂等重放（同请求连续重放 3 次） | 3/3 PASS | `logs/03_unit_test.log`（`replay_checks`） |
+| 保留 SEW 编码（`vsew=4`）拒绝 | PASS（illegal，不写回） | `logs/03_unit_test.log`（`reserved_sew`） |
+| 复位空闲（复位后无 valid/illegal/dirty、`vd=0`） | PASS | `logs/03_unit_test.log`（`reset_idle`） |
+| 延迟 / 吞吐 | 3 cycle / 1.0 inst/cycle | `logs/03_unit_test.log` |
+| Chisel 版 ↔ Verilog 版等价回归（同一测试台/同一向量） | 1518/1518 PASS，3 cycle，1.0 inst/cycle | `logs/09_chisel_equiv.log` |
+| 行覆盖率（Verilator `--coverage-line`） | **36/36 = 100%** | `logs/07_coverage.log` |
 | generic 综合（工艺无关） | 4186 单元 / 172 FF / 25 级 R2R | `docs/phase4/01_yosys_synth.log` |
 | 严格 lint（Verilator -Wall） | 0 告警 0 错误 | `docs/phase4/02_verilator_lint.log` |
 | 断言违反 | 0 | 测试报告 §6 |
@@ -243,13 +260,14 @@ def vdot_vv(vd, vs1, vs2):
 
 | # | 项 | 状态 | 处理 |
 |---|---|---|---|
-| U-01 | 香山集成与仿真 | 未执行（源码已就绪，集成待实施） | 按集成说明执行并重跑回归 |
-| U-02 | 汇编级测试（emu） | 未执行（`vadd.S` 已跑通，`vdot` 汇编用例待集成后补） | 复用同一向量集 |
+| U-01 | 香山集成与仿真 | **已完成（2026-11-03）**：I1–I7 落地，RTL 重生成 + emu 重建，定向 7/7、非法 5/5 | 见测试报告 §8 与 `docs/phase2/logs/xs_emu_*.log` |
+| U-02 | 汇编级测试（emu） | **已完成（2026-11-03）**：`vdot_directed.S` 7 例、`vdot_illegal.S` 5 例 | 复用同一向量集；`tests/phase2/xs_emu/run_emu.sh` |
 | U-03 | NEMU 扩展与 difftest | **已完成**（阶段三 T3.1–T3.4） | 见 `docs/phase3/cosim_report.md`，1513/1513，RTL↔NEMU 0 mismatch |
-| U-04 | 真实加速比 | 仅有解析估算 | 见 `docs/phase3/perf_analysis.md`，明确标注估算 |
+| U-04 | 真实加速比 | **已完成（2026-11-03）**：emu 实测 9.8×（对标量，8-lane 公平）/ 11.8×（对 RVV，16-lane，属上界），NITER=2000 | 见 `docs/phase3/perf_analysis.md` §6 |
 | U-05 | 综合面积/时序 | **部分关闭**（阶段四 T4.2/T4.3） | generic 综合已取得：4186 单元 / 172 FF / 25 级 R2R / ≈5.3k–8.4k GE，见 `docs/phase4/01_yosys_synth.log`；PDK 映射后的 µm²、ns 签核仍待做 |
 | O2 | funct6 编码冲突 | **已关闭**（`111111` 属 RVV 保留空间） | 香山集成时仍按 `patches/xiangshan-vdot-integration.md` I1 做一次 grep 复核 |
-| — | Chisel 版未编译 | 已知 | 以 Verilog 版为功能证据 |
+| — | Chisel 版可编译性 | **已关闭**（v1.2） | Chisel 6.6.0 + firtool 1.62.1 编译通过、生成 `rtl/chisel/VDotCore.sv`，经 `VDotWrap.v` 复用同一测试台完成 1518/1518 等价回归（`logs/09_chisel_equiv.log`） |
+| — | 单元级行覆盖率 | **已关闭**（v1.2） | `--coverage-line` + `--annotate-min 1`，36/36 = 100%（`logs/07_coverage.log`） |
 
 ---
 
@@ -262,4 +280,8 @@ def vdot_vv(vd, vs1, vs2):
 | `vd[127:32]=0` | §4.2 尾零填充 + 断言 | 断言 + 128 bit 全宽比对 |
 | 19 bit 溢出边界正确 | §2.3 | TC-B03（`0x00020000`） |
 | 非法配置拒绝 | §2.4、§4.2 合法性判定 | TC-E01..E04 |
+| 非法配置拒绝（保留 SEW 编码 `vsew=4..7`） | §2.4、§4.1 `in_sew[2:0]` | TC-E05（`reserved_sew`，见 `logs/03_unit_test.log`） |
+| `vstart != 0` 幂等重算 | §2.4、§3.1 无状态设计 | TC-V03（同请求连续重放 3 次，`replay_checks`） |
+| lane0..7 逐通道定位 | §4.2 乘法块按 lane 切片 | 逐 lane 自检 8/8（`lane_checks`） |
 | 单 uop / 3 周期 / 1 条每周期 | §3.1、§3.3 | 测试报告 §5 |
+| Chisel 与 Verilog 语义一致 | §4.3 | `logs/09_chisel_equiv.log`（1518/1518） |

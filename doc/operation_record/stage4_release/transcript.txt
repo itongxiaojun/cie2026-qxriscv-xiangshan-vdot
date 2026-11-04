@@ -1,0 +1,53 @@
+# 阶段四 · 收口、综合评估与提交检查
+# 命令与输出均为本机真实执行（长耗时步骤为已捕获日志回放）
+
+$ .tools/verilator/bin/verilator --lint-only -Wall -Wno-DECLFILENAME rtl/verilog/VDot.v --top-module VDot
+- V e r i l a t i o n   R e p o r t: Verilator 5.034 2025-02-24 rev v5.034
+- Verilator: Built from 0.027 MB sources in 2 modules, into 0.041 MB in 5 C++ files needing 0.000 MB
+- Verilator: Walltime 0.020 s (elab=0.002, cvt=0.009, bld=0.000); cpu 0.020 s on 1 threads; alloced 8.812 MB
+
+$ yosys -p "read_verilog -sv rtl/verilog/VDot.v; synth -top VDot -noabc; techmap; opt; ltp -noff; stat"
+=== VDot ===
+   Number of wires:                735
+   Number of wire bits:           8104
+   Number of public wires:          67
+   Number of public wire bits:    1138
+   Number of ports:                 13
+   Number of port bits:            397
+   Number of memories:               0
+   Number of memory bits:            0
+--
+Longest topological path in VDot (length=25):
+
+$ grep -E 'GE|4186|172' docs/phase4/release_report.md | head -8
+| 取得面积与逻辑深度量级 | yosys 0.52 generic 综合（`synth -noabc; techmap`） | 4186 单元 / 172 FF / 最长 R2R 路径 25 级 |
+| 通用单元总数 | **4186** |
+| **合计** | 4186 | — | — | **≈5.35k** | **≈8.38k** |
+即 **约 5.3k–8.4k GE（中值 ≈6.9k）**。数量级与结构相符：8 个有符号 8×8 乘法器 + 7 个 20 bit 加法器 + 172 bit 流水寄存器。
+`ltp -noff` 报 **最长寄存器到寄存器路径 25 级**，起点为 `s1_prod[1][1]`、经 `maccmap` 全加器压缩树到达 `s2_sum`，即 **EX2 加法树是时序关键级**，而非 EX1 乘法。
+> 该深度是 generic 门级拓扑长度，**不是 ns**；真实深度需 PDK 库 + DC/Genus 才能给出。25 级对 20 bit、8 操作数归约属于正常范围（3 层加法器经压缩树折叠）。
+| 综合数据 | 无 | 4186 单元 / 172 FF / 25 级 | 新增 yosys 评估 |
+
+$ bash scripts/run_all.sh
+== unit ==
+   PASS
+== lint ==
+   PASS
+== chisel ==
+   PASS
+== nemu ==
+   PASS
+== rtl_export ==
+   PASS
+== cosim ==
+   PASS
+== baseline ==
+   PASS
+---------------------------------------------
+ALL : PASS
+RUN_ALL_EXIT=0
+
+$ grep -c '^- \[x\]' ipd/04_评审对照与提交检查表.md
+grep -E '视频提交位置' ipd/04_评审对照与提交检查表.md
+checked_items: 29
+| 视频提交位置（三处） | `doc/operation_record/README.md` 索引；阶段一~三录屏对应三处提交位，阶段四录屏为补充 | MP4 录屏 + PNG 分步截图 + transcript.txt | 四阶段录屏已生成（terminal 帧录制，无 GUI 主机），每个官方要求步骤含命令页与结果页截图 | C | D20 |

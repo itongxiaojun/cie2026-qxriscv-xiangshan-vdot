@@ -4,9 +4,13 @@ cases_pass       : 1518
 cases_fail       : 0
 latency_write    : 3 cycle
 latency_illegal  : 3 cycle
+reset_idle       : PASS
+lane_checks      : 8/8 PASS
+replay_checks    : 3/3 PASS
+reserved_sew     : PASS
 stream_issued    : 1024
 stream_completed : 1024
 stream_ok        : true
 throughput       : 1 inst/cycle
-total_cycles     : 10148
+total_cycles     : 10220
 RESULT           : PASS

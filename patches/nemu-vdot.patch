@@ -26,10 +26,10 @@ index ee7618e..75b1804 100644
  }
  
 diff --git a/src/isa/riscv64/instr/rvv/vcompute.h b/src/isa/riscv64/instr/rvv/vcompute.h
-index 2bcb6aa..3cfa94c 100644
+index 2bcb6aa..461275c 100644
 --- a/src/isa/riscv64/instr/rvv/vcompute.h
 +++ b/src/isa/riscv64/instr/rvv/vcompute.h
-@@ -23,6 +23,45 @@ def_EHelper(vadd) {
+@@ -23,6 +23,43 @@ def_EHelper(vadd) {
    ARITH(ADD, SIGNED)
  }
  
@@ -45,31 +45,29 @@ index 2bcb6aa..3cfa94c 100644
 +    longjmp_exception(EX_II);
 +  }
 +  check_vstart_exception(s);
++  // 注意：本文件在 CONFIG_PERF_OPT/PERF_OPT_SHARE 下以线程化代码（goto 标签）形式
++  // 展开进 execute()，EHelper 内不能使用 `return`，否则会提前退出整个 execute()
++  // 并把 PC 回滚到本条指令造成无限重放。这里统一用 if/else 收尾。
 +  if (check_vstart_ignore(s)) {
++    // vstart >= vl（含 vl == 0）：不写回，正常退休
 +    vp_set_dirty();
-+    return;
-+  }
-+  if (vl->val == 0) {
-+    // vl == 0：不写回，正常退休
++  } else {
++    int32_t sum = 0;
++    for (int i = 0; i < 8; i++) {
++      rtlreg_t a, b;
++      get_vreg(id_src->reg,  i, &a, 0, 0, SIGNED, 0);
++      get_vreg(id_src2->reg, i, &b, 0, 0, SIGNED, 0);
++      sum += (int32_t)(int8_t)a * (int32_t)(int8_t)b;
++    }
++
++    // 写满整寄存器：vd[31:0] = sum（按位，不做符号扩展），vd[127:32] = 0
++    vreg_l(id_dest->reg, 0) = (uint64_t)(uint32_t)sum;
++    for (int i = 1; i < VLEN / 64; i++) {
++      vreg_l(id_dest->reg, i) = 0;
++    }
++    vp_set_dirty();
 +    vstart->val = 0;
-+    return;
 +  }
-+
-+  int32_t sum = 0;
-+  for (int i = 0; i < 8; i++) {
-+    rtlreg_t a, b;
-+    get_vreg(id_src->reg,  i, &a, 0, 0, SIGNED, 0);
-+    get_vreg(id_src2->reg, i, &b, 0, 0, SIGNED, 0);
-+    sum += (int32_t)(int8_t)a * (int32_t)(int8_t)b;
-+  }
-+
-+  // 写满整寄存器：vd[31:0] = sum（按位，不做符号扩展），vd[127:32] = 0
-+  vreg_l(id_dest->reg, 0) = (uint64_t)(uint32_t)sum;
-+  for (int i = 1; i < VLEN / 64; i++) {
-+    vreg_l(id_dest->reg, i) = 0;
-+  }
-+  vp_set_dirty();
-+  vstart->val = 0;
 +}
 +
  def_EHelper(vsub) {

@@ -81,6 +81,19 @@ static std::string wid_str(const Wid &a) {
     return std::string(buf);
 }
 
+// 与 RTL 无关的 C++ 内联模型：vd[31:0] = S，vd[127:32] = 0
+static Wid compute_expected(const Wid &a, const Wid &b) {
+    int64_t s = 0;
+    for (int k = 0; k < 8; k++) {
+        int8_t av = (int8_t)((a.w[k / 4] >> (8 * (k % 4))) & 0xFF);
+        int8_t bv = (int8_t)((b.w[k / 4] >> (8 * (k % 4))) & 0xFF);
+        s += (int)av * (int)bv;
+    }
+    Wid e{};
+    e.w[0] = (uint32_t)(s & 0xFFFFFFFF);
+    return e;
+}
+
 struct Case {
     std::string id;
     int vl_zero, vm, sew, lmul;
@@ -148,6 +161,15 @@ static CaseResult run_case(const Case &c) {
     return r;
 }
 
+// 排空流水线，避免用例间干扰
+static void drain_pipe() {
+    top->in_valid = 0;
+    top->eval();
+    tick();
+    tick();
+    tick();
+}
+
 // 流式测试：连续 in_valid，按序检查
 static bool run_stream(int n, int *out_count, uint64_t *first_cyc, uint64_t *last_cyc) {
     std::deque<Wid> q;
@@ -176,19 +198,7 @@ static bool run_stream(int n, int *out_count, uint64_t *first_cyc, uint64_t *las
             top->in_sew     = 0;
             top->in_lmul    = 0;
             // 期望值由 C++ 内联模型计算（与 Python 模型构成独立交叉实现）
-            int64_t s = 0;
-            for (int k = 0; k < 8; k++) {
-                int8_t av = (int8_t)((a.w[k / 4] >> (8 * (k % 4))) & 0xFF);
-                int8_t bv = (int8_t)((b.w[k / 4] >> (8 * (k % 4))) & 0xFF);
-                s += (int)av * (int)bv;
-            }
-            // 输出布局：vd[31:0] = S，vd[127:32] = 0
-            Wid e{};
-            e.w[0] = (uint32_t)(s & 0xFFFFFFFF);
-            e.w[1] = 0;
-            e.w[2] = 0;
-            e.w[3] = 0;
-            q.push_back(e);
+            q.push_back(compute_expected(a, b));
         }
         top->eval();
         bool ov = top->out_valid;
@@ -210,6 +220,90 @@ static bool run_stream(int n, int *out_count, uint64_t *first_cyc, uint64_t *las
     }
     *out_count = done;
     return done == n;
+}
+
+// 补充自检（不属于 1518 条向量文件，用于覆盖向量矩阵未显式命中的点）：
+//   TC-L00..L07  逐 lane 定位：仅 lane i 非零，验证通道切片正确
+//   TC-V03       无状态重放（模拟 vstart!=0 重算）：同一请求连发 3 次结果一致
+//   TC-E05       vsew=4（保留编码）：必须判非法，验证接口保留完整 3 bit SEW
+static int run_extra_checks(int *lane_pass, int *replay_pass, bool *reserved_ok) {
+    int fails = 0;
+    *lane_pass = 0;
+    *replay_pass = 0;
+    *reserved_ok = false;
+
+    for (int i = 0; i < 8; i++) {
+        Wid a{}, b{};
+        int8_t av = (i & 1) ? -5 : 5;          // 奇数 lane 取负值，正负都覆盖
+        int8_t bv = (int8_t)(i + 1);
+        a.w[i / 4] = (uint32_t)((uint8_t)av << (8 * (i % 4)));
+        b.w[i / 4] = (uint32_t)((uint8_t)bv << (8 * (i % 4)));
+        Wid e = compute_expected(a, b);
+
+        Case c{};
+        c.id = "TC-L0" + std::to_string(i);
+        c.vl_zero = 0; c.vm = 1; c.sew = 0; c.lmul = 0;
+        c.vs1 = wid_str(a); c.vs2 = wid_str(b); c.expected = wid_str(e);
+        c.wr = 1; c.ill = 0;
+
+        CaseResult r = run_case(c);
+        drain_pipe();
+        if (r.pass) {
+            (*lane_pass)++;
+        } else {
+            fails++;
+            std::cout << "FAIL " << c.id << " : " << r.detail << "\n";
+        }
+    }
+
+    // TC-V03：无状态单元重放幂等（vstart!=0 时框架重放同一 uop，结果必须一致）
+    Wid a{}, b{}, prev{}, e{};
+    a.w[0] = 0x80808080u; a.w[1] = 0x80808080u;   // 全 -128，S=+131072
+    b.w[0] = 0x80808080u; b.w[1] = 0x80808080u;
+    e = compute_expected(a, b);
+    for (int k = 0; k < 3; k++) {
+        Case c{};
+        c.id = "TC-V03-replay" + std::to_string(k);
+        c.vl_zero = 0; c.vm = 1; c.sew = 0; c.lmul = 0;
+        c.vs1 = wid_str(a); c.vs2 = wid_str(b); c.expected = wid_str(e);
+        c.wr = 1; c.ill = 0;
+
+        CaseResult r = run_case(c);
+        drain_pipe();
+        bool same_as_prev = (k == 0) || wid_eq(r.got, prev);
+        if (r.pass && same_as_prev) {
+            (*replay_pass)++;
+        } else {
+            fails++;
+            std::cout << "FAIL " << c.id << " : " << r.detail
+                      << (same_as_prev ? "" : "（与上次重放结果不一致）") << "\n";
+        }
+        prev = r.got;
+    }
+
+    // TC-E05：vsew=4 为保留编码，不能被 2 bit 截断误判为 e8
+    {
+        Wid a{}, b{};
+        a.w[0] = 0x01010101u; a.w[1] = 0x01010101u;
+        b.w[0] = 0x01010101u; b.w[1] = 0x01010101u;
+        Case c{};
+        c.id = "TC-E05-reserved-sew";
+        c.vl_zero = 0; c.vm = 1; c.sew = 4; c.lmul = 0;
+        c.vs1 = wid_str(a); c.vs2 = wid_str(b);
+        c.expected = wid_str(compute_expected(a, b));
+        c.wr = 0; c.ill = 1;
+
+        CaseResult r = run_case(c);
+        drain_pipe();
+        if (r.pass) {
+            *reserved_ok = true;
+        } else {
+            fails++;
+            std::cout << "FAIL " << c.id << " : " << r.detail << "\n";
+        }
+    }
+
+    return fails;
 }
 
 int main(int argc, char **argv) {
@@ -240,6 +334,10 @@ int main(int argc, char **argv) {
     for (int i = 0; i < 3; i++) tick();
     top->reset = 0;
     top->eval();
+
+    bool reset_idle = !top->out_valid && !top->out_illegal && !top->out_dirty &&
+                      vd_read().w[0] == 0 && vd_read().w[1] == 0 &&
+                      vd_read().w[2] == 0 && vd_read().w[3] == 0;
 
     // 可选：导出逐用例 128 bit 结果，供 NEMU 协同仿真直接 diff
     // 只导出"合法且写回"的用例，顺序与输入文件一致
@@ -290,12 +388,12 @@ int main(int argc, char **argv) {
             export_f << wid_str(r.got) << "\n";
         }
         // 排空流水线，避免用例间干扰
-        top->in_valid = 0;
-        top->eval();
-        tick();
-        tick();
-        tick();
+        drain_pipe();
     }
+
+    int lane_pass = 0, replay_pass = 0;
+    bool reserved_ok = false;
+    int extra_fail = run_extra_checks(&lane_pass, &replay_pass, &reserved_ok);
 
     int stream_n = 1024, stream_got = 0;
     uint64_t c0 = 0, c1 = 0;
@@ -309,12 +407,17 @@ int main(int argc, char **argv) {
     std::cout << "cases_fail       : " << fail << "\n";
     std::cout << "latency_write    : " << lat_write << " cycle\n";
     std::cout << "latency_illegal  : " << lat_ill << " cycle\n";
+    std::cout << "reset_idle       : " << (reset_idle ? "PASS" : "FAIL") << "\n";
+    std::cout << "lane_checks      : " << lane_pass << "/8 PASS\n";
+    std::cout << "replay_checks    : " << replay_pass << "/3 PASS\n";
+    std::cout << "reserved_sew     : " << (reserved_ok ? "PASS" : "FAIL") << "\n";
     std::cout << "stream_issued    : " << stream_n << "\n";
     std::cout << "stream_completed : " << stream_got << "\n";
     std::cout << "stream_ok        : " << (stream_ok ? "true" : "false") << "\n";
     std::cout << "throughput       : " << tp << " inst/cycle\n";
     std::cout << "total_cycles     : " << cyc << "\n";
-    std::cout << "RESULT           : " << ((fail == 0 && stream_ok) ? "PASS" : "FAIL") << "\n";
+    bool all_ok = (fail == 0 && stream_ok && reset_idle && extra_fail == 0);
+    std::cout << "RESULT           : " << (all_ok ? "PASS" : "FAIL") << "\n";
 
     if (export_f.is_open()) export_f.close();
 
@@ -323,7 +426,11 @@ int main(int argc, char **argv) {
         delete tfp;
         tfp = nullptr;
     }
+#if VM_COVERAGE
+    // 仅在 --coverage 构建时启用：退出前写出覆盖率数据（默认目录为当前工作目录）
+    Verilated::threadContextp()->coveragep()->write("coverage.dat");
+#endif
     top->final();
     delete top;
-    return (fail == 0 && stream_ok) ? 0 : 1;
+    return all_ok ? 0 : 1;
 }

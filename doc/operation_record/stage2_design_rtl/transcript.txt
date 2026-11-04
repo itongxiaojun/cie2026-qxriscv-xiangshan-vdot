@@ -1,0 +1,54 @@
+# 阶段二 · 设计实现与 RTL 验证
+# 命令与输出均为本机真实执行（长耗时步骤为已捕获日志回放）
+
+$ grep -nE '^## |^### ' docs/phase2/design.md | head -18
+15:## 1. 设计目标与约束
+28:## 2. 指令语义
+30:### 2.1 汇编格式与建议编码
+48:### 2.2 规范性伪代码
+64:### 2.3 位宽推导（本设计的关键决策）
+76:### 2.4 语义判定表
+93:## 3. 微架构设计
+95:### 3.1 单元定位
+107:### 3.2 数据通路
+135:### 3.3 周期级时序
+146:### 3.4 参数
+157:## 4. RTL 实现说明
+159:### 4.1 模块接口
+179:### 4.2 实现结构（与文件对应）
+199:### 4.3 Chisel 版本
+218:## 5. 与香山昆明湖 V2 的集成方案
+238:## 6. 验证结果摘要
+259:## 7. 偏差、风险与未决项
+
+$ wc -l rtl/verilog/VDot.v rtl/chisel/VDotCore.sv
+ls -lh rtl/verilog/VDot.v
+  175 rtl/verilog/VDot.v
+  214 rtl/chisel/VDotCore.sv
+  389 total
+-rw-r--r-- 1 dbqxxs dbqxxs 6.6K Nov  2 20:21 rtl/verilog/VDot.v
+
+$ bash scripts/run_unit_tests.sh
+cases_total      : 1518
+cases_pass       : 1518
+cases_fail       : 0
+latency_write    : 3 cycle
+throughput       : 1 inst/cycle
+total_cycles     : 10220
+RESULT           : PASS
+
+$ grep -E 'coverage|36/36' docs/phase2/logs/07_coverage.log
+grep -E 'cases|RESULT' docs/phase2/logs/09_chisel_equiv.log
+Total coverage (36/36) 100.00%
+
+cases_total      : 1518
+cases_pass       : 1518
+RESULT           : PASS
+
+$ bash tests/phase2/xs_emu/run_emu.sh
+DIRECTED fails=00000000
+Core 0: HIT GOOD TRAP at pc = 0x800001f6
+
+$ emu -i vdot_illegal.bin --no-diff
+ILLEGAL traps=00000005 other=00000000
+Core 0: HIT GOOD TRAP at pc = 0x80000094
