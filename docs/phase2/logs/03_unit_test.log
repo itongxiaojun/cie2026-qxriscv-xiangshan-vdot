@@ -1,6 +1,6 @@
 ---------------------------------------------
-cases_total      : 1518
-cases_pass       : 1518
+cases_total      : 3047
+cases_pass       : 3047
 cases_fail       : 0
 latency_write    : 3 cycle
 latency_illegal  : 3 cycle
@@ -8,9 +8,17 @@ reset_idle       : PASS
 lane_checks      : 8/8 PASS
 replay_checks    : 3/3 PASS
 reserved_sew     : PASS
+int4_nibble      : 16/16 PASS
+ternary_boundary : 3/3 PASS
+reserved_mode    : PASS
 stream_issued    : 1024
 stream_completed : 1024
 stream_ok        : true
 throughput       : 1 inst/cycle
-total_cycles     : 10220
+stream4_ok       : true
+throughput_int4x2: 1 inst/cycle
+streamT_ok       : true
+throughput_vtdot : 1 inst/cycle
+mac_per_cycle    : int8=8 int4x2=16 vtdot=16
+total_cycles     : 21588
 RESULT           : PASS

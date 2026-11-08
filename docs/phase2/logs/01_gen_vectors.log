@@ -1,2 +1,3 @@
 vectors written: tests/vectors/vdot_vectors.txt
-  total=1518 write=1513 illegal=4 vl_zero=1
+  total=3047 write=3032 illegal=12 vl_zero=3
+  int8=1518 int4x2=763 ternary=764 reserved=2

@@ -1,0 +1,11 @@
+[dumpfile] "/home/dbqxxs/xsriscv/cieriscv/build/phase1/vadd_pipeline.vcd"
+[timestart] 8320
+[timeend] 8355
+[size] 1900 1030
+[pos] 10 10
+[sst_width] 260
+[signals_width] 620
+[sst_expanded] 0
+[sst_vpaned_height] 120
+[pattern_trace] 1
+[pattern_trace] 0

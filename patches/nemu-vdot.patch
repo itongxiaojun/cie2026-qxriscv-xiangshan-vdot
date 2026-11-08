@@ -1,35 +1,41 @@
 diff --git a/src/isa/riscv64/include/isa-all-instr.h b/src/isa/riscv64/include/isa-all-instr.h
-index 2f18ca1..58a8fdf 100644
+index 2f18ca1..622f1e0 100644
 --- a/src/isa/riscv64/include/isa-all-instr.h
 +++ b/src/isa/riscv64/include/isa-all-instr.h
 @@ -167,6 +167,7 @@
    f(vssra) f(vnsrl) f(vnsra) f(vnclipu) \
    f(vnclip) f(vssrl) f(vwredsumu) f(vwredsum) \
    f(vredsum) \
-+  f(vdot) \
++  f(vdot) f(vdot4x2) f(vtdot) \
    f(vredand) f(vredor) f(vredxor) f(vredminu) \
    f(vredmin) f(vredmaxu) f(vredmax) f(vmvsx) \
    f(vmvxs) f(vpopc) f(vfirst) f(vmsbf) f(vmsof) \
 diff --git a/src/isa/riscv64/instr/rvv/decode.h b/src/isa/riscv64/instr/rvv/decode.h
-index ee7618e..75b1804 100644
+index ee7618e..10054f5 100644
 --- a/src/isa/riscv64/instr/rvv/decode.h
 +++ b/src/isa/riscv64/instr/rvv/decode.h
-@@ -211,6 +211,10 @@ def_THelper(vopivv) {
+@@ -211,6 +211,16 @@ def_THelper(vopivv) {
    def_INSTR_TAB("010100 ? ????? ????? ??? ????? ????? ??", vror);
    def_INSTR_TAB("110101 ? ????? ????? ??? ????? ????? ??", vwsll);
  
-+  // 2026CIE 自定义指令：vdot.vv（SEW=8, VLEN=128, K=8）
-+  // funct6=111111 属于 RVV 保留编码空间，本项目专用；语义见 docs/phase2/design.md
-+  def_INSTR_TAB("111111 ? ????? ????? ??? ????? ????? ??", vdot);
++  // 2026CIE 自定义指令：vdot 家族（SEW=8, VLEN=128）
++  // funct3=000 (OPIVV)，用 funct6 的三个保留值区分子格式：
++  //   111111 vdot.vv     INT8 点积，单结果
++  //   111110 vdot4x2.vv  INT4 打包，双结果双累加流
++  //   111101 vtdot.vv    BitNet 1.58 三值权重，双结果双累加流
++  // 语义见 docs/phase2/design.md
++  def_INSTR_TAB("111111 ? ????? ????? 000 ????? ????? ??", vdot);
++  def_INSTR_TAB("111110 ? ????? ????? 000 ????? ????? ??", vdot4x2);
++  def_INSTR_TAB("111101 ? ????? ????? 000 ????? ????? ??", vtdot);
 +
    return EXEC_ID_inv;
  }
  
 diff --git a/src/isa/riscv64/instr/rvv/vcompute.h b/src/isa/riscv64/instr/rvv/vcompute.h
-index 2bcb6aa..461275c 100644
+index 2bcb6aa..94e164d 100644
 --- a/src/isa/riscv64/instr/rvv/vcompute.h
 +++ b/src/isa/riscv64/instr/rvv/vcompute.h
-@@ -23,6 +23,43 @@ def_EHelper(vadd) {
+@@ -23,6 +23,132 @@ def_EHelper(vadd) {
    ARITH(ADD, SIGNED)
  }
  
@@ -62,6 +68,95 @@ index 2bcb6aa..461275c 100644
 +
 +    // 写满整寄存器：vd[31:0] = sum（按位，不做符号扩展），vd[127:32] = 0
 +    vreg_l(id_dest->reg, 0) = (uint64_t)(uint32_t)sum;
++    for (int i = 1; i < VLEN / 64; i++) {
++      vreg_l(id_dest->reg, i) = 0;
++    }
++    vp_set_dirty();
++    vstart->val = 0;
++  }
++}
++
++// 4-bit 有符号二补码扩展（vdot4x2 用）
++// 注意：CONFIG_PERF_OPT 下本文件被文本化展开进 execute()，不能定义函数，
++// 因此这里用 GNU 语句表达式宏而不是 static inline。
++#define vdot_sext4(x) ({ int _s4 = (int)(x) & 0xF; _s4 - ((_s4 & 0x8) ? 0x10 : 0); })
++
++//=============================================================================
++// 2026CIE 自定义指令 vdot4x2.vv（INT4 打包，双结果双累加流）
++//   nibble n = bits[4n+3:4n]
++//   r0 = sum_{n=0..7}  sext4(vs1[n]) * sext4(vs2[n])
++//   r1 = sum_{n=8..15} sext4(vs1[n]) * sext4(vs2[n])
++//   vd[31:0] = r0，vd[63:32] = r1，vd[127:64] = 0
++// 仅支持 SEW=8 / LMUL=1 / vm=1；其余组合报非法指令。
++//=============================================================================
++def_EHelper(vdot4x2) {
++  require_vector(true);
++  if (vtype->vsew != 0 || vtype->vlmul != 0 || s->vm == 0) {
++    longjmp_exception(EX_II);
++  }
++  check_vstart_exception(s);
++  if (check_vstart_ignore(s)) {
++    vp_set_dirty();
++  } else {
++    int32_t r0 = 0, r1 = 0;
++    for (int i = 0; i < 8; i++) {
++      rtlreg_t a, b;
++      get_vreg(id_src->reg,  i, &a, 0, 0, SIGNED, 0);
++      get_vreg(id_src2->reg, i, &b, 0, 0, SIGNED, 0);
++      uint8_t a8 = (uint8_t)a;
++      uint8_t b8 = (uint8_t)b;
++      int32_t p = vdot_sext4(a8 & 0xF) * vdot_sext4(b8 & 0xF)
++                + vdot_sext4(a8 >> 4)   * vdot_sext4(b8 >> 4);
++      if (i < 4) r0 += p;
++      else       r1 += p;
++    }
++    vreg_l(id_dest->reg, 0) = (uint64_t)(uint32_t)r0 |
++                              ((uint64_t)(uint32_t)r1 << 32);
++    for (int i = 1; i < VLEN / 64; i++) {
++      vreg_l(id_dest->reg, i) = 0;
++    }
++    vp_set_dirty();
++    vstart->val = 0;
++  }
++}
++
++//=============================================================================
++// 2026CIE 自定义指令 vtdot.vv（BitNet 1.58 三值权重，双结果双累加流）
++//   a_i = sext8(vs1[8*i +: 8])，code_i = vs2[2*i +: 2]
++//   code 00/11 -> 0，01 -> +a_i，10 -> -a_i
++//   r0 = sum_{i=0..7} tern(...)，r1 = sum_{i=8..15} tern(...)
++//   vd[31:0] = r0，vd[63:32] = r1，vd[127:64] = 0
++// 仅支持 SEW=8 / LMUL=1 / vm=1；其余组合报非法指令。
++//=============================================================================
++def_EHelper(vtdot) {
++  require_vector(true);
++  if (vtype->vsew != 0 || vtype->vlmul != 0 || s->vm == 0) {
++    longjmp_exception(EX_II);
++  }
++  check_vstart_exception(s);
++  if (check_vstart_ignore(s)) {
++    vp_set_dirty();
++  } else {
++    // vs2 低 32 bit 存放 16 个 2-bit 三值码
++    uint32_t codes = 0;
++    for (int i = 0; i < 4; i++) {
++      rtlreg_t c;
++      get_vreg(id_src2->reg, i, &c, 0, 0, UNSIGNED, 0);
++      codes |= ((uint32_t)(uint8_t)c) << (8 * i);
++    }
++
++    int32_t r0 = 0, r1 = 0;
++    for (int i = 0; i < 16; i++) {
++      rtlreg_t a;
++      get_vreg(id_src->reg, i, &a, 0, 0, SIGNED, 0);
++      int32_t av = (int32_t)(int8_t)a;
++      uint32_t code = (codes >> (2 * i)) & 0x3u;
++      int32_t v = (code == 1u) ? av : (code == 2u) ? -av : 0;
++      if (i < 8) r0 += v;
++      else       r1 += v;
++    }
++    vreg_l(id_dest->reg, 0) = (uint64_t)(uint32_t)r0 |
++                              ((uint64_t)(uint32_t)r1 << 32);
 +    for (int i = 1; i < VLEN / 64; i++) {
 +      vreg_l(id_dest->reg, i) = 0;
 +    }

@@ -41,3 +41,6 @@ env.sh.local
 
 # 外部参考代码（仅本地参考，不纳入版本控制）
 openTPU-main/
+
+# 提交打包材料（本地生成，含视频/截图/文档副本，不纳入版本控制）
+submission_bundle/

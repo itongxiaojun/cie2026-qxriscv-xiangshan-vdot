@@ -167,12 +167,25 @@ class Asm:
         self._insn(lambda sym, pc, vs3=vs3, rs1=rs1, imm=imm,
                    f3=f3: s_type(0x27, f3, rs1, vs3, imm | 0x20))
 
-    def vdot_vv(self, vd, vs2, vs1, vm=1):
-        # funct6=111111（RVV 保留空间，本项目专用）, funct3=000
+    def _vdot_vv(self, funct6, vd, vs1, vs2, vm=1):
+        # 本族三条指令统一 funct3=000（OPIVV），用 funct6 区分
+        # 参数顺序与 RISC-V 一致：vs1 -> bits[19:15]，vs2 -> bits[24:20]
         def f(sym, pc):
-            return ((0x3F << 26) | ((vm & 1) << 25) | ((vs2 & 0x1F) << 20)
+            return (((funct6 & 0x3F) << 26) | ((vm & 1) << 25) | ((vs2 & 0x1F) << 20)
                     | ((vs1 & 0x1F) << 15) | (0 << 12) | ((vd & 0x1F) << 7) | 0x57)
         self._insn(f)
+
+    def vdot_vv(self, vd, vs1, vs2, vm=1):
+        # funct6=111111（RVV 保留空间，本项目专用）, funct3=000
+        self._vdot_vv(0x3F, vd, vs1, vs2, vm)
+
+    def vdot4x2_vv(self, vd, vs1, vs2, vm=1):
+        # funct6=111110, funct3=000 -> INT4 打包双结果
+        self._vdot_vv(0x3E, vd, vs1, vs2, vm)
+
+    def vtdot_vv(self, vd, vs1, vs2, vm=1):
+        # funct6=111101, funct3=000 -> BitNet 三值权重双结果
+        self._vdot_vv(0x3D, vd, vs1, vs2, vm)
 
     def vop_mvv(self, funct6, vd, vs2, vs1, funct3=2):
         """OPMVV 通用编码（funct3=010，vm=1）"""
@@ -241,10 +254,15 @@ def _align(n, a):
     return (n + a - 1) // a * a
 
 
-def build_program(data_off, ncases, verdict_reg=A0):
-    """构造自测程序。data_off = 数据区相对 BASE 的字节偏移。"""
+def build_program(data_off, ncases, mode=0, verdict_reg=A0):
+    """构造自测程序。data_off = 数据区相对 BASE 的字节偏移。
+
+    mode: 0=vdot.vv(INT8)，1=vdot4x2.vv(INT4)，2=vtdot.vv(BitNet 三值)。
+    双结果模式（1/2）先按 SEW=64 读回 vd[63:0]，分两行分别输出 r0、r1。
+    """
     a = Asm()
-    # banner: "VDOT\n" —— 用于确认 UART 通路可用（放在 t2 初始化之后）
+    # banner: 确认 UART 通路可用；所有模式都含 "VDOT" 前缀
+    banner = {0: "VDOT\n", 1: "VDOT4X2\n", 2: "VTDOT\n"}[mode]
     a.auipc(S0, 0)                 # s0 = BASE
     a.addi(S0, S0, data_off)       # s0 = &hextab
     a.addi(S3, S0, 0)              # s3 = &hextab
@@ -253,7 +271,7 @@ def build_program(data_off, ncases, verdict_reg=A0):
     # 裸机复位后 mstatus.VS=Off，向量指令一律非法；先把 VS 置为 Initial
     a.addi(T0, X0, 0x200)          # mstatus.VS[10:9] = 0b01
     a.csrs(CSR_MSTATUS, T0)
-    a.print_str("VDOT\n")
+    a.print_str(banner)
     a.addi(T5, X0, ncases)         # t5 = 剩余用例数
 
     a.label("loop")
@@ -263,11 +281,25 @@ def build_program(data_off, ncases, verdict_reg=A0):
     a.vle8_v(V1, S1, 0)
     a.addi(T4, S1, 16)
     a.vle8_v(V2, T4, 0)
-    a.vdot_vv(V3, V1, V2)
-    a.vsetvli(T1, X0, 0x10)        # e32, m1, tu, mu
-    a.vmv_x_s(T0, V3)              # t0 = vd[31:0]（SEW=32 元素 0）
-    a.hex_print(T0)
-    a.print_str("\n")
+    if mode == 1:
+        a.vdot4x2_vv(V3, V1, V2)
+    elif mode == 2:
+        a.vtdot_vv(V3, V1, V2)
+    else:
+        a.vdot_vv(V3, V1, V2)
+    if mode == 0:
+        a.vsetvli(T1, X0, 0x10)    # e32, m1
+        a.vmv_x_s(T0, V3)          # t0 = vd[31:0]（SEW=32 元素 0）
+        a.hex_print(T0)
+        a.print_str("\n")
+    else:
+        a.vsetvli(T1, X0, 0x18)    # e64, m1 -> 元素 0 = vd[63:0]
+        a.vmv_x_s(T0, V3)          # t0 = r0 | (r1 << 32)
+        a.hex_print(T0)            # r0
+        a.print_str("\n")
+        a.srli(T0, T0, 32)
+        a.hex_print(T0)            # r1
+        a.print_str("\n")
     a.addi(S1, S1, CASE_SIZE)
     a.addi(T5, T5, -1)
     a.bne(T5, X0, "loop")

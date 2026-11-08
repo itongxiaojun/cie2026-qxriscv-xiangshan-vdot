@@ -6,20 +6,22 @@
 
 ## 1. 产物一览
 
-| 阶段 | 对应官方要求 | 步骤 | 截图 | 录屏 | 时长 | 大小 |
-|---|---|---|---|---|---|---|
-| 阶段一 环境搭建与 RTL 链路贯通 | 1.1 / 1.2 / 1.3 | 6 | 12 张 | [stage1_environment.mp4](stage1_environment/video/stage1_environment.mp4) | 00:35.53 | 424 KB |
-| 阶段二 设计实现与 RTL 验证 | 2.1 / 2.2 / 2.3 | 6 | 12 张 | [stage2_design_rtl.mp4](stage2_design_rtl/video/stage2_design_rtl.mp4) | 00:38.23 | 360 KB |
-| 阶段三 NEMU 扩展、协同仿真与加速评估 | 3.1.1 / 3.1.2 / 3.2 / 3.3 | 7 | 14 张 | [stage3_nemu_cosim.mp4](stage3_nemu_cosim/video/stage3_nemu_cosim.mp4) | 00:46.13 | 600 KB |
-| 阶段四 收口、综合评估与提交检查 | 质量/提交门径 | 5 | 10 张 | [stage4_release.mp4](stage4_release/video/stage4_release.mp4) | 00:34.23 | 408 KB |
+| 阶段 | 对应官方要求 | 步骤 | 截图 | 原版录屏 | 解说字幕版 |
+|---|---|---|---|---|---|
+| 阶段一 环境搭建与 RTL 链路贯通 | 1.1 / 1.2 / 1.3 | 7 | 16 张 | [stage1_environment.mp4](stage1_environment/video/stage1_environment.mp4) 00:52.93 / 696 KB | [stage1_environment_narrated.mp4](stage1_environment/video/stage1_environment_narrated.mp4) 00:53.93 / 1.5 MB |
+| 阶段二 设计实现与 RTL 验证 | 2.1 / 2.2 / 2.3 | 7 | 14 张 | [stage2_design_rtl.mp4](stage2_design_rtl/video/stage2_design_rtl.mp4) 00:44.70 / 441 KB | [stage2_design_rtl_narrated.mp4](stage2_design_rtl/video/stage2_design_rtl_narrated.mp4) 00:45.00 / 1.1 MB |
+| 阶段三 NEMU 扩展、协同仿真与加速评估 | 3.1.1 / 3.1.2 / 3.2 / 3.3 | 7 | 14 张 | [stage3_nemu_cosim.mp4](stage3_nemu_cosim/video/stage3_nemu_cosim.mp4) 00:46.93 / 599 KB | [stage3_nemu_cosim_narrated.mp4](stage3_nemu_cosim/video/stage3_nemu_cosim_narrated.mp4) 00:47.27 / 1.2 MB |
+| 阶段四 收口、综合评估与提交检查 | 质量/提交门径 | 5 | 10 张 | [stage4_release.mp4](stage4_release/video/stage4_release.mp4) 00:35.10 / 406 KB | [stage4_release_narrated.mp4](stage4_release/video/stage4_release_narrated.mp4) 00:35.30 / 880 KB |
 
 - 每个步骤固定两张截图：`<NN>_<slug>_command.png`（命令与官方要求标签）、`<NN>_<slug>_result.png`（真实输出）。
+- 阶段一步骤 1-7 另含两张 GTKWave 实景截图：`07_gtkwave_wave1.png`（全流水）、`07_gtkwave_wave2.png`（执行/写回放大）。
 - 每阶段另有 `transcript.txt`，按步骤记录命令与完整输出（截图/视频仅展示前若干行）。
 - 所有画面均为 H.264 / yuv420p / 1920×1080 / 30 fps，可直接播放。
+- 四个阶段均另提供带中文解说与硬字幕的版本（`*_narrated.mp4` 与同名 `.srt`，AAC 音轨），由 `scripts/make_stage_narration.py` 按逐帧时间轴配音对齐生成；字幕落在底部 80px 黑边内，不遮挡终端输出。
 
 ## 2. 阶段一：环境搭建与 RTL 链路贯通
 
-目录：[stage1_environment](stage1_environment) · 录屏：`video/stage1_environment.mp4`
+目录：[stage1_environment](stage1_environment) · 录屏：`video/stage1_environment.mp4` · 解说字幕版：`video/stage1_environment_narrated.mp4`
 
 | 步骤 | 官方要求 | 屏幕内容 | 截图 |
 |---|---|---|---|
@@ -29,23 +31,25 @@
 | 1-4 | 1.1 hello 程序 | `hello xiangshan, I am qxriscv...` 与 GOOD TRAP（真实日志回放） | `04_hello_*.png` |
 | 1-5 | 1.3 vadd 波形 | `--dump-wave -b 8200 -e 8360` 采集参数（真实日志回放） | `05_vadd_wave_*.png` |
 | 1-6 | 1.3 vadd 波形 | 取指→译码→发射执行→访存→写回→提交时间线 + 波形图文件 | `06_vadd_timeline_*.png` |
+| 1-7 | 1.3 vadd 波形 | GTKWave 3.3.121 打开 vadd VCD，展示流水有效信号与写回数据 | `07_gtkwave_*.png`（命令/结果 + 2 张波形实景） |
 
 ## 3. 阶段二：设计实现与 RTL 验证
 
-目录：[stage2_design_rtl](stage2_design_rtl) · 录屏：`video/stage2_design_rtl.mp4`
+目录：[stage2_design_rtl](stage2_design_rtl) · 录屏：`video/stage2_design_rtl.mp4` · 解说字幕版：`video/stage2_design_rtl_narrated.mp4`
 
 | 步骤 | 官方要求 | 屏幕内容 | 截图 |
 |---|---|---|---|
 | 2-1 | 2.1 设计文档 | `design.md` 章节结构（语义、位宽、数据通路、时序、集成） | `01_design_doc_*.png` |
 | 2-2 | 2.2 RTL 实现 | `VDot.v` / `VDotCore.sv` 行数与文件信息 | `02_rtl_files_*.png` |
-| 2-3 | 2.3 单元测试 | 1518/1518、3 cycle、1.0 inst·cycle⁻¹（真实回归日志回放） | `03_unit_regression_*.png` |
-| 2-4 | 2.3 单元测试 | 行覆盖率 36/36 与 Chisel 等价回归 1518/1518 | `04_coverage_*.png` |
+| 2-3 | 2.3 单元测试 | 1518/1518、3 cycle、1.0 inst·cycle⁻¹（截图对应 v1.2 单模式历史回放；v1.3 三模式为 3047/3047、MAC/cycle 8:16:16） | `03_unit_regression_*.png` |
+| 2-4 | 2.3 单元测试 | 行覆盖率 36/36 与 Chisel 等价回归 1518/1518（v1.3 已更新为 55/55、3047/3047，见 `docs/phase2/logs/`） | `04_coverage_*.png` |
 | 2-5 | 2.2 昆明湖 V2 集成 | 香山 emu 定向用例 7/7、difftest 0 mismatch | `05_emu_directed_*.png` |
 | 2-6 | 2.3 单元测试 | 非法配置用例 5/5 触发 trap | `06_emu_illegal_*.png` |
+| 2-7 | 2.2 昆明湖 V2 集成 | `apply_xiangshan_patch.sh check` + 补丁 numstat：5 文件 +157/−7（v1.3 三模式） | `07_xs_patch_*.png` |
 
 ## 4. 阶段三：NEMU 扩展、协同仿真与加速评估
 
-目录：[stage3_nemu_cosim](stage3_nemu_cosim) · 录屏：`video/stage3_nemu_cosim.mp4`
+目录：[stage3_nemu_cosim](stage3_nemu_cosim) · 录屏：`video/stage3_nemu_cosim.mp4` · 解说字幕版：`video/stage3_nemu_cosim_narrated.mp4`
 
 | 步骤 | 官方要求 | 屏幕内容 | 截图 |
 |---|---|---|---|
@@ -59,7 +63,7 @@
 
 ## 5. 阶段四：收口、综合评估与提交检查
 
-目录：[stage4_release](stage4_release) · 录屏：`video/stage4_release.mp4`
+目录：[stage4_release](stage4_release) · 录屏：`video/stage4_release.mp4` · 解说字幕版：`video/stage4_release_narrated.mp4`
 
 | 步骤 | 门径 | 屏幕内容 | 截图 |
 |---|---|---|---|
@@ -72,7 +76,8 @@
 ## 6. 复现方式
 
 ```bash
-python3 scripts/make_operation_recordings.py
+python3 scripts/make_operation_recordings.py   # 截图、原版录屏、transcript
+python3 scripts/make_stage_narration.py        # 四阶段解说字幕版（需 edge-tts）
 ```
 
 - 依赖：`Pillow`、`ffmpeg`（本仓库使用 `.tools/ffmpeg/ffmpeg`）；字体取自系统 Noto Sans CJK 与 DejaVu Sans Mono。
@@ -82,6 +87,7 @@ python3 scripts/make_operation_recordings.py
 ## 7. 真实性说明（无 GUI 主机）
 
 - 本机为无图形界面的 Linux 终端，无法直接抓取桌面录屏；因此录屏由**真实命令输出**渲染成终端帧后经 ffmpeg 编码，画面中的命令、输出与退出状态均来自本机执行。
+- 阶段一 1-7 的 GTKWave 画面是在 `Xvfb` 虚拟显示器中真实打开 8200–8360 的 vadd VCD 后截取，不是合成示意图；`.gtkw` 与截图保存在 `docs/phase1/wave/`，VCD 可用 emu `--dump-wave` 复现。
 - `emu`、NEMU 协同仿真、`run_all.sh` 等单次耗时较长（数十秒至数分钟），为避免录屏等待，这些步骤回放 `docs/` 下**已捕获的真实日志**，并在画面中用黄色注记标明"长耗时步骤：回放已捕获的真实日志"；其余步骤为本次现场执行。
 - 完整未截断的命令输出见各阶段 `transcript.txt`；回归证据见 [run_all.log](_evidence/run_all.log) 与 [阶段三最终报告](../phase3/final_report.md)。
 
@@ -89,7 +95,7 @@ python3 scripts/make_operation_recordings.py
 
 | 官方提交位 | 使用的录屏 | 配套文档 |
 |---|---|---|
-| 阶段一（环境与 vadd） | `stage1_environment/video/stage1_environment.mp4` | [docs/phase1/env.md](../../docs/phase1/env.md)、[docs/phase1/vadd_wave.md](../../docs/phase1/vadd_wave.md) |
-| 阶段二（设计与实现） | `stage2_design_rtl/video/stage2_design_rtl.mp4` | [docs/phase2/design.md](../../docs/phase2/design.md)、[docs/phase2/test_report.md](../../docs/phase2/test_report.md) |
-| 阶段三（协同仿真与评估） | `stage3_nemu_cosim/video/stage3_nemu_cosim.mp4` | [docs/phase3/cosim_report.md](../../docs/phase3/cosim_report.md)、[docs/phase3/perf_analysis.md](../../docs/phase3/perf_analysis.md) |
-| 补充：阶段四收口 | `stage4_release/video/stage4_release.mp4` | [docs/phase4/release_report.md](../../docs/phase4/release_report.md) |
+| 阶段一（环境与 vadd） | `stage1_environment/video/stage1_environment_narrated.mp4` | [docs/phase1/env.md](../../docs/phase1/env.md)、[docs/phase1/vadd_wave.md](../../docs/phase1/vadd_wave.md) |
+| 阶段二（设计与实现） | `stage2_design_rtl/video/stage2_design_rtl_narrated.mp4` | [docs/phase2/design.md](../../docs/phase2/design.md)、[docs/phase2/test_report.md](../../docs/phase2/test_report.md) |
+| 阶段三（协同仿真与评估） | `stage3_nemu_cosim/video/stage3_nemu_cosim_narrated.mp4` | [docs/phase3/cosim_report.md](../../docs/phase3/cosim_report.md)、[docs/phase3/perf_analysis.md](../../docs/phase3/perf_analysis.md) |
+| 补充：阶段四收口 | `stage4_release/video/stage4_release_narrated.mp4` | [docs/phase4/release_report.md](../../docs/phase4/release_report.md) |

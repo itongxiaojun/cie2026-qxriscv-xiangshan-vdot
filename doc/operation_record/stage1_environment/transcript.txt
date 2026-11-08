@@ -44,3 +44,16 @@ ls -lh docs/phase1/wave/vadd_pipeline_wave.png
 | 写回（存储 uop） | 8339 | `writebackVldu_1_valid` | `fuOpType=0x100`（`VstuType.vse`），`vecWen=0`，`vl=16` |
 | 提交 | 8351 | difftest + `HIT GOOD TRAP` | `pc=0x80000038`，`instrCnt=18`，`cycleCnt=8,351` |
 -rw-rw-r-- 1 dbqxxs dbqxxs 369K Nov  1 23:54 docs/phase1/wave/vadd_pipeline_wave.png
+
+$ .tools/gw/root/usr/bin/gtkwave -N \
+  docs/phase1/wave/vadd_pipeline.gtkw -S docs/phase1/wave/vadd_pipeline.tcl
+[dumpfile] "/home/dbqxxs/xsriscv/cieriscv/build/phase1/vadd_pipeline.vcd"
+[timestart] 8240
+[timeend] 8355
+
+[dumpfile] "/home/dbqxxs/xsriscv/cieriscv/build/phase1/vadd_pipeline.vcd"
+[timestart] 8320
+[timeend] 8355
+
+-rw-rw-r-- 1 dbqxxs dbqxxs 46K Nov  4 20:34 docs/phase1/wave/gtkwave_vadd_pipeline.png
+-rw-rw-r-- 1 dbqxxs dbqxxs 69K Nov  4 20:34 docs/phase1/wave/gtkwave_vadd_writeback.png

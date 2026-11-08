@@ -52,3 +52,14 @@ Core 0: HIT GOOD TRAP at pc = 0x800001f6
 $ emu -i vdot_illegal.bin --no-diff
 ILLEGAL traps=00000005 other=00000000
 Core 0: HIT GOOD TRAP at pc = 0x80000094
+
+$ bash scripts/apply_xiangshan_patch.sh check
+git -C build/xs-work/XiangShan apply --numstat \
+  "$PWD/patches/xiangshan-vdot.patch"
+已应用（可 revert）
+
+1	1	src/main/scala/xiangshan/Parameters.scala
+8	0	src/main/scala/xiangshan/backend/decode/VecDecoder.scala
+25	4	src/main/scala/xiangshan/backend/fu/FuConfig.scala
+7	2	src/main/scala/xiangshan/backend/fu/FuType.scala
+78	0	src/main/scala/xiangshan/backend/fu/wrapper/VDotUnit.scala

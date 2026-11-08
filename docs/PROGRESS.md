@@ -14,7 +14,7 @@
 | 团队 | qxriscv（2–3 人） |
 | 工作区 | `/home/dbqxxs/xsriscv/cieriscv`（2026-11-01 迁移至当前主机） |
 | 计划基线 | [ipd/03 开发计划](file:///home/dbqxxs/xsriscv/cieriscv/ipd/03_开发计划_WBS与里程碑.md)（D1–D20 / M1–M5） |
-| 最后更新 | 2026-11-03 |
+| 最后更新 | 2026-11-08 |
 
 ---
 
@@ -23,9 +23,9 @@
 | 里程碑 | 内容 | IPD 门径 | 计划 | 状态 | 完成度 |
 |---|---|---|---|---|---|
 | M1 | 环境就绪 + 向量加法波形 | TR3 | D6 | **完成** | 100%（香山 `16ae9dd` 的 emu 已构建；hello 真实 UART 输出、4 份原始日志、vadd 波形与逐 cycle 分析均已入库） |
-| M2 | vdot 单元 RTL + 单元验证 | TR3 | D10 | **完成** | 100%（1518/1518 PASS；行覆盖率 36/36 = 100%；Chisel 版编译并生成 RTL，同向量等价回归 1518/1518） |
+| M2 | vdot 指令族 RTL + 单元验证 | TR3 | D10 | **完成** | 100%（三模式 3047/3047 PASS；行覆盖率 55/55 = 100%；Chisel 版编译并生成 RTL，同向量等价回归 3047/3047） |
 | M3 | 香山内集成 + 汇编级正/负/边界测试 | TR4 | D12 | **完成** | 100%（`vdot` 接入 VFEX0；定向 7/7 difftest 0 mismatch，非法 5/5；见 `docs/phase2/logs/xs_emu_*.log`） |
-| M4 | NEMU 扩展 + 协同仿真 | TR4 | D15 | **完成** | 100%（1513/1513，RTL↔NEMU 0 mismatch） |
+| M4 | NEMU 扩展 + 协同仿真 | TR4 | D15 | **完成** | 100%（三模式 3032 用例 / 4551 结果字 / 0 mismatch；三模式 boundary 全 PASS） |
 | M5 | 基线与加速比 + 提交 | TR6/ADCP | D20 | 进行中 | 95%（基线与协同仿真全绿；**香山 emu 实测加速比 9.8×（对标量，8-lane 公平）/11.8×（对 RVV，16-lane，属上界）已完成**；generic 综合为历史日志、当前无 yosys 不可复跑；仅剩提交动作待批准） |
 
 ## 2. 官方交付要求对照
@@ -35,13 +35,13 @@
 | 1.1 hello + IP | 运行输出截图/日志 | **完成** | [02_hello_run.log](file:///home/dbqxxs/xsriscv/cieriscv/docs/phase1/logs/02_hello_run.log)：`hello xiangshan, I am qxriscv, IP address: 192.168.0.168`，`HIT GOOD TRAP at pc = 0x80000020`（instrCnt 295 / cycleCnt 10,819，EXIT=0） |
 | 1.2 操作日志 | 环境部署日志 | **完成** | [01_env_setup.log](file:///home/dbqxxs/xsriscv/cieriscv/docs/phase1/logs/01_env_setup.log)：主机基线→工具链→源码锁定→镜像编译→emu 构建（三阶段耗时）；运行/解析日志 [02](file:///home/dbqxxs/xsriscv/cieriscv/docs/phase1/logs/02_hello_run.log)、[03](file:///home/dbqxxs/xsriscv/cieriscv/docs/phase1/logs/03_vadd_run.log)、[04](file:///home/dbqxxs/xsriscv/cieriscv/docs/phase1/logs/04_wave_parse.log) |
 | 1.3 vadd 执行过程文档 | 波形 + 分析 | **完成** | [vadd_wave.md](file:///home/dbqxxs/xsriscv/cieriscv/docs/phase1/vadd_wave.md)、[vadd_pipeline_wave.png](file:///home/dbqxxs/xsriscv/cieriscv/docs/phase1/wave/vadd_pipeline_wave.png)、[03_vadd_run.log](file:///home/dbqxxs/xsriscv/cieriscv/docs/phase1/logs/03_vadd_run.log)、[04_wave_parse.log](file:///home/dbqxxs/xsriscv/cieriscv/docs/phase1/logs/04_wave_parse.log) |
-| 2.1 设计文档 | 设计文档 | **完成** | [docs/phase2/design.md](file:///home/dbqxxs/xsriscv/cieriscv/docs/phase2/design.md) |
-| 2.2 RTL 实现 | Verilog/Chisel | **完成**（模块级已验证） | [VDot.v](file:///home/dbqxxs/xsriscv/cieriscv/rtl/verilog/VDot.v) |
+| 2.1 设计文档 | 设计文档 | **完成** | [docs/phase2/design.md](file:///home/dbqxxs/xsriscv/cieriscv/docs/phase2/design.md) v1.3（三条指令 + BitNet 融合 + 共享数据通路） |
+| 2.2 RTL 实现 | Verilog/Chisel | **完成**（模块级三模式验证） | [VDot.v](file:///home/dbqxxs/xsriscv/cieriscv/rtl/verilog/VDot.v)、[VDot.scala](file:///home/dbqxxs/xsriscv/cieriscv/rtl/chisel/VDot.scala) |
 | 2.3.1 正数测试 | 用例 + 结果 | **完成**（单元级） | [测试报告 §4.1](file:///home/dbqxxs/xsriscv/cieriscv/docs/phase2/test_report.md) |
 | 2.3.2 负数测试 | 用例 + 结果 | **完成**（单元级） | 同上 |
 | 2.3.3 边界测试 | 用例 + 结果 | **完成**（单元级） | 同上 §4.2 |
 | 3.1.1 NEMU 扩展 | 源码改动 | **完成** | [nemu-vdot.patch](file:///home/dbqxxs/xsriscv/cieriscv/patches/nemu-vdot.patch) |
-| 3.1.2 协同仿真 | NEMU vs RTL 比对 | **完成** | [01_nemu_cosim.log](file:///home/dbqxxs/xsriscv/cieriscv/docs/phase3/01_nemu_cosim.log)：1513/1513，0 mismatch；边界自检 vl=0 不写回 + 非法 4/4 |
+| 3.1.2 协同仿真 | NEMU vs RTL 比对 | **完成** | [01_nemu_cosim.log](file:///home/dbqxxs/xsriscv/cieriscv/docs/phase3/01_nemu_cosim.log)：3032 用例 / 4551 结果字，0 mismatch；三模式 boundary 全 PASS |
 | 3.2 基线实现 | 组合指令程序 | **完成**（NEMU 上跑通） | [run_nemu_baseline.py](file:///home/dbqxxs/xsriscv/cieriscv/tests/run_nemu_baseline.py)：1513/1513 |
 | 3.3 加速分析 | 分析报告 | **完成（香山 emu 实测）**：per-iter vdot 0.51 cyc vs 标量 4.96 cyc / RVV 6.00 cyc → **9.8×（对标量，8-lane 公平）/ 11.8×（对 RVV，16-lane，属上界）**（NITER=2000） | [perf_analysis.md](file:///home/dbqxxs/xsriscv/cieriscv/docs/phase3/perf_analysis.md) §6、`docs/phase2/logs/xs_emu_perf_*.log` |
 
@@ -50,29 +50,32 @@
 | ID | 任务 | 交付物 | 状态 | 依赖 | 证据 |
 |---|---|---|---|---|---|
 | T2.1 | vdot 语义与位宽裁决 | 规格书 §2 | 完成 | — | `ipd/01` |
-| T2.2 | 模块级 RTL | `rtl/verilog/VDot.v` | 完成 | T2.1 | 1518/1518 PASS |
-| T2.3 | 参考模型（Python/C） | `tests/ref_vdot.py`、`model/vdot_ref.c` | 完成 | T2.1 | `logs/06_*` |
-| T2.4 | 单元测试台与向量 | `tb_vdot.cpp`、1518 条向量 | 完成 | T2.2/T2.3 | `logs/03_*`、VCD；含逐 lane 8/8、`vstart` 重放 3/3、保留 SEW、复位空闲自检 |
-| T2.5 | 阶段二报告与设计文档 | `docs/phase2/*` | 完成 | T2.4 | `design.md` v1.2、`test_report.md` v1.2 |
-| T2.6 | 行覆盖率与 Chisel 版等价回归 | 覆盖率日志 + `rtl/chisel/VDotCore.sv` | 完成 | T2.4 | `logs/07_coverage.log`（36/36 = 100%）；`logs/09_chisel_equiv.log`（1518/1518，3 cycle，1.0 inst/cycle）；脚本 `scripts/run_chisel_equiv.sh` |
-| T3.1 | NEMU 中新增 `vdot.vv` 译码与执行 | NEMU 源码改动 | 完成 | NEMU 源码 | `patches/nemu-vdot.patch`（3 文件 +42 行，与工作树 `git diff` 一致） |
-| T3.2 | 最小 RISC-V 测试程序（手写机器码） | `tests/as/*.py` + 二进制 | 完成 | — | `tests/as/mini_asm.py`；1513 用例镜像 48720 B |
-| T3.3 | NEMU 单指令自测（vdot 结果正确） | 运行日志 | 完成 | T3.1/T3.2 | `docs/phase3/01_nemu_cosim.log`：1513/1513 PASS；边界自检 `vl0=PASS`、`illegal=PASS(4/4)` |
-| T3.4 | RTL ↔ NEMU 协同仿真（同向量集比对） | 比对日志 + 报告 | 完成 | T3.3 | 1513 vs 1513，0 mismatch（`02_rtl_export.txt`） |
+| T2.2 | 模块级 RTL（三模式） | `rtl/verilog/VDot.v` | 完成 | T2.1 | 3047/3047 PASS |
+| T2.3 | 参考模型（Python/C，三模式） | `tests/ref_vdot.py`、`model/vdot_ref.c` | 完成 | T2.1 | `logs/06_*` |
+| T2.4 | 单元测试台与向量 | `tb_vdot.cpp`、3047 条向量 | 完成 | T2.2/T2.3 | `logs/03_*`、VCD；含逐 lane 8/8、nibble 16/16、三值边界 3/3、`vstart` 重放 3/3、保留 SEW/mode、复位空闲 |
+| T2.5 | 阶段二报告与设计文档 | `docs/phase2/*` | 完成 | T2.4 | `design.md` v1.3、`test_report.md` v1.3 |
+| T2.6 | 行覆盖率与 Chisel 版等价回归 | 覆盖率日志 + `rtl/chisel/VDotCore.sv` | 完成 | T2.4 | `logs/07_coverage.log`（55/55 = 100%）；`logs/09_chisel_equiv.log`（3047/3047，3 cycle，三模式 1.0 inst/cycle）；脚本 `scripts/run_chisel_equiv.sh` |
+| T2.7 | INT4 打包双结果 + BitNet 三值融合 | `vdot4x2.vv` / `vtdot.vv` 语义、RTL、模型、向量、文档 | 完成 | T2.2 | 763 + 764 条用例；12-bit 双树、9-bit 三值 lane；`design.md` §2–§3；`rtl/chisel/VDotCore.sv` 475 行 |
+| T3.1 | NEMU 中新增三模式译码与执行 | NEMU 源码改动 | 完成 | NEMU 源码 | `patches/nemu-vdot.patch`（3 文件，170 行，与工作树 `git diff` 一致） |
+| T3.2 | 最小 RISC-V 测试程序（手写机器码） | `tests/as/*.py` + 二进制 | 完成 | — | `tests/as/mini_asm.py`（含 `vdot/vdot4x2/vtdot` 编码，vs1/vs2 顺序已修正，D-09） |
+| T3.3 | NEMU 三模式自测 | 运行日志 | 完成 | T3.1/T3.2 | `docs/phase3/01_nemu_cosim.log`：3032 用例 / 4551 字 / 0 fail；三模式边界自检 PASS |
+| T3.4 | RTL ↔ NEMU 协同仿真（同向量集比对） | 比对日志 + 报告 | 完成 | T3.3 | 4551 vs 4551，0 mismatch（`build/nemu/cosim_vectors.txt`） |
 | T3.5 | 基线汇编实现（RVV 组合） | 汇编程序 | 完成 | T3.2 | `tests/run_nemu_baseline.py`：1513/1513，6→1 数据通路指令 |
 | T3.6 | 延迟/吞吐实测（rdcycle） | 测量日志 | 完成（单元级实测） | 需香山或 NEMU 计时 | `04_rtl_unit_perf.log`：3 cycle / 1.0 inst/cycle；NEMU 动态指令 78701 vs 89294 |
 | T3.7 | 阶段三报告（实测替换估算） | `docs/phase3/*` | 完成 | T3.4/T3.6 | [cosim_report.md](file:///home/dbqxxs/xsriscv/cieriscv/docs/phase3/cosim_report.md) |
 | T3.8 | 香山内集成（VFU） | 香山源码改动 | 完成 | 香山 `16ae9dd` + emu | I1–I7 完成（`FuType.vdot`/`VecDecoder`/`VdotCfg`/`VDotUnit`/VFEX0）；RTL 重生成 + emu 重建；定向 7/7、非法 5/5 |
 | T3.10 | 香山 emu 汇编级用例（正/负/边界） | `tests/phase2/xs_emu/*.S` | 完成 | T3.8 | `vdot_directed.S`（7 用例：正/负/极值/符号交替/vl=8/vl=0）difftest 0 mismatch；`vdot_illegal.S`（5 类非法配置）5/5 |
 | T3.11 | 香山 emu 实测加速比 | 实测日志 + 报告 | 完成 | T3.8 | `docs/phase3/perf_analysis.md` §6：9.8×（对标量，8-lane 公平）/ 11.8×（对 RVV 基线，16-lane，属上界），NITER=2000 |
+| T3.12 | 香山三模式 Scala 编译与补丁重生成 | `patches/xiangshan-vdot.patch` | 完成 | T3.8 / T2.7 | `mill -i xiangshan.compile`：573 任务 0 error（28 s）；补丁 5 文件 +157/−7；emu 重跑列为 B6 |
 | T3.9 | 阶段一（环境/hello/vadd 波形） | 日志 + 波形 + 文档 | 完成 | xs-env | `docs/phase1/logs/01–04`、`wave/vadd_pipeline_wave.png`、`vadd_wave.md`；emu 构建 EXIT=0 |
 | T4.1 | RTL 死逻辑清理与严格 lint 门禁 | `VDot.v` 修订 | 完成 | T2.2 | `02_verilator_lint.log`：4 告警 → **0** |
-| T4.2 | generic 综合与逻辑深度评估 | 综合日志 | 完成 | T4.1 | `01_yosys_synth.log`：4186 单元 / 172 FF / 最长路径 25 级 |
+| T4.2 | generic 综合与逻辑深度评估 | 综合日志 | 完成（INT8 单模式历史） | T4.1 | `01_yosys_synth.log`：4186 单元 / 172 FF / 最长路径 25 级；三模式面积待综合 |
 | T4.3 | 面积估算（GE 口径） | 估算表 | 完成 | T4.2 | `release_report.md` §3.2：≈5.3k–8.4k GE |
 | T4.4 | 加速模型（延迟/吞吐）与答辩口径 | 模型表 | 完成 | T4.1 | `release_report.md` §5：4.0× 延迟 / 6.0× 吞吐（模型） |
-| T4.5 | 清理后全量回归（单元/协同/基线） | 回归日志 | 完成 | T4.1 | 1518/1518；1513/1513，0 mismatch；基线 6.0× |
-| T4.6 | 一键回归脚本（单元+lint+Chisel 等价+协同+基线） | `scripts/run_all.sh` | 完成 | T4.5 | 本机 `ALL : PASS`（7 步全绿，2026-11-02 加入 Chisel 等价步骤） |
-| T4.7 | 文档一致性同步（行号/信号/面积口径） | `design.md` v1.1、`perf_analysis.md` §5、`ipd/01` Q5 | 完成 | T4.1–T4.4 | 清除 `s1_valid/s2_valid`、`sum_c` 旧引用；面积改为 generic 综合口径 |
+| T4.5 | 清理后全量回归（单元/协同/基线） | 回归日志 | 完成 | T4.1 | 3047/3047；NEMU 3032 用例 / 4551 字，0 mismatch；基线 6.0× |
+| T4.6 | 一键回归脚本（单元+lint+Chisel 等价+协同+基线） | `scripts/run_all.sh` | 完成 | T4.5 | 本机 `ALL : PASS`（7 步全绿） |
+| T4.7 | 文档一致性同步（行号/信号/面积口径） | `design.md` v1.3、`perf_analysis.md` §6.5、`ipd/01` Q5 | 完成 | T4.1–T4.4 / T2.7 | 三模式语义、编码、结果布局、位宽与 §6.5 吞吐口径全系列对齐 |
+| T4.8 | 三模式 Chisel 生成与等价回归 | `rtl/chisel/VDotCore.sv`（475 行） | 完成 | T2.7 | `mill` + firtool 生成含 `io_in_mode`；`scripts/run_chisel_equiv.sh` 3047/3047 PASS |
 
 ## 4. 阻塞与风险
 
@@ -81,11 +84,23 @@
 | B1 | 阶段一全部内容 | — | — | **已关闭（2026-11-01）**：emu 构建、hello 运行、vadd 波形与四份日志均已入库（见 §2 的 1.1–1.3 证据） |
 | B2 | 香山内集成与回归 | — | — | **已关闭（2026-11-03）**：I1–I7 完成，RTL 重生成 + emu 重建；定向 7/7 difftest 0 mismatch、非法 5/5；见 `docs/phase2/logs/xs_emu_*.log` |
 | B3 | 真实加速比 | — | — | **已关闭（2026-11-03）**：emu 实测 9.8×（对标量，8-lane 公平）/ 11.8×（对 RVV，16-lane，属上界），见 `perf_analysis.md` §6 |
-| B4 | PDK 面积/时序签核 | 工艺库 + DC/Genus | 环境允许 | **部分关闭**：generic 规模/深度已取得（`docs/phase4/01_yosys_synth.log`）；µm² 与 ns 仍待做 |
+| B4 | PDK 面积/时序签核 | 工艺库 + DC/Genus | 环境允许 | **部分关闭**：generic 规模/深度已取得（`docs/phase4/01_yosys_synth.log`，INT8 单模式）；µm² 与 ns 仍待做 |
+| B5 | 三模式综合面积 | yosys 环境 + 三模式 `VDot.v` | 有 yosys | 复跑 `synth -noabc; techmap; stat`，替换 `release_report.md` §3 的单模式口径 |
+| B6 | INT4/三值系统级 emu | emu 全量重建（约 75 min） | 有余量机器时间 | 复用 `tests/phase2/xs_emu/*.S` 增加三条指令用例并跑 difftest |
 
-> **表述口径（2026-11-03 更新）**：B2/B3 关闭后，可以宣称"`vdot` 已在香山昆明湖 V2 的 `emu`（Verilator）+ difftest 环境验证，并取得实测加速比 9.8×（lane 公平）/11.8×（16-lane 上界）"。仍不得宣称的内容：PDK 级面积/时序（B4 未关闭）、真实频率下的绝对性能、FPGA/流片结果。非法配置用例的 difftest 存在参考模型侧已知滞后，故采用程序内自检，见 `docs/phase2/test_report.md` §8.1。
+> **表述口径（2026-11-08 更新）**：三模式（INT8/INT4/三值）的**单元级 + NEMU + Chisel** 证据已闭环；系统级 emu 仍只有 INT8 实测。可以宣称"`vdot` 指令族在模块级与 NEMU 协同层完成三模式验证，INT8 在香山 emu + difftest 环境取得实测加速比 9.8×（lane 公平）/11.8×（16-lane 上界）"。不得把 INT4/三值的单元级数字外推为整程序实测，也不得宣称 PDK 级面积/时序（B4 未关闭）、真实频率绝对性能与 FPGA/流片结果。
 
-## 5. 当前环境复跑记录（2026-11-02 / 2026-11-03）
+## 5. 当前环境复跑记录（2026-11-08 / 2026-11-02 / 2026-11-03）
+
+### 2026-11-08 三模式回归（T2.7 / T3.12 / T4.8）
+
+| 步骤 | 结果 | 说明 |
+|---|---|---|
+| `bash scripts/run_unit_tests.sh`（6 步） | **PASS** | 3047/3047，0 fail；延迟 3 cycle；三模式吞吐 1 inst/cycle；`total_cycles 21588`；`int4_nibble 16/16`、`ternary_boundary 3/3`、`reserved_mode` PASS |
+| 行覆盖率 | **55/55 = 100%** | `--coverage-line` + `annotate-min 1`，`logs/07_coverage.log` |
+| `python3 tests/run_nemu_cosim.py` | **PASS** | 3032 用例（int8=1513/int4x2=759/vtdot=760）/ 4551 字 / 0 fail；三模式 boundary PASS |
+| `bash scripts/run_chisel_equiv.sh` | **PASS** | 三模式 `VDotCore.sv`（475 行）；3047/3047、3 cycle、三模式 1.0 inst/cycle |
+| `mill -i xiangshan.compile` | **PASS** | 573 任务，0 error，28 s；`patches/xiangshan-vdot.patch` 重生成（5 文件 +157/−7） |
 
 ### 2026-11-03 香山 emu 系统级验证（B2/B3 关闭）
 
@@ -133,7 +148,9 @@
 
 | 日期 | 变更 |
 |---|---|
-| 2026-11-04 | 操作留痕产物入库：新增 `doc/operation_record/`，按官方 1.1/1.2/1.3、2.1/2.2/2.3、3.1.1/3.1.2/3.2/3.3 拆为 24 个步骤，生成 48 张命令/结果截图、4 段 MP4 录屏（1920×1080@30fps）与各阶段 `transcript.txt`；长耗时步骤回放已捕获日志并在画面标注；索引见 `doc/operation_record/README.md`，`ipd/04` 视频提交行改为指向该索引 |
+| 2026-11-08 | 三模式差异化落地（T2.7/T3.12/T4.8）：新增 `vdot4x2.vv`（INT4 打包、双结果双累加流）与 `vtdot.vv`（BitNet b1.58 三值、无乘法器、双结果）；RTL/Chisel/Python/C/NEMU/香山译码与 `VDotUnit` 全系列同步；单元回归 3047/3047、覆盖率 55/55、NEMU 3032 用例/4551 字 0 fail、Chisel 3047/3047、香山 Scala 编译 573 任务 0 error；`design.md` 升至 v1.3（新增 §3 BitNet 融合章与 §3.7–§3.9 融合评审：量化前端边界、1.58-bit 打包密度取舍、理念映射矩阵）、`test_report.md` v1.3、`perf_analysis.md` 新增 §6.5、`release_report.md`/README 同步三模式口径；`patches/nemu-vdot.patch` 170 行、`patches/xiangshan-vdot.patch` 5 文件 +157/−7；提交包技术文档/证明材料/源码快照 PDF 与 zip 全部按三模式重生成 |
+| 2026-11-06 | 阶段二新增 2-7「香山集成补丁与脚本」步骤（`apply_xiangshan_patch.sh check` + 补丁 numstat），步骤增至 26 个、截图 54 张；四阶段全部生成中文解说字幕版（`*_narrated.mp4` + `.srt`，AAC 音轨、硬字幕落底部黑边），统一由 `scripts/make_stage_narration.py` 生成；提交包视频位换为四段解说版并移除原版，索引见 `doc/operation_record/README.md` |
+| 2026-11-04 | 操作留痕产物入库：新增 `doc/operation_record/`，按官方 1.1/1.2/1.3、2.1/2.2/2.3、3.1.1/3.1.2/3.2/3.3 拆为 25 个步骤，生成 50 张命令/结果截图 + 2 张 GTKWave 波形实景、4 段 MP4 录屏（1920×1080@30fps）与各阶段 `transcript.txt`；长耗时步骤回放已捕获日志并在画面标注；阶段一 1-7 用 GTKWave 打开 vadd VCD 并在录屏展示；索引见 `doc/operation_record/README.md`，`ipd/04` 视频提交行改为指向该索引 |
 | 2026-11-04 | 性能数据 3 次重复测量（G5 关闭）：四个内核各独立跑 3 次（NITER=2000），cycleCnt 中位数 empty 11,108 / vdot 12,123 / rvv 23,109 / scalar 21,022，极差全为 0（0.00%，判据 <5%），12/12 次 `PERF result=OK` 且 `HIT GOOD TRAP`；新增 `docs/phase3/05_perf_repeat.log`，同步 `ipd/04` 勾选与 `perf_analysis.md` §6.1/§6.3 重复测量表；新增阶段三最终总结报告 `docs/phase3/final_report.md` |
 | 2026-11-03 | 阶段三一致性审计与迭代：`patches/nemu-vdot.patch` 按当前 NEMU 工作树重新生成（+44→+42 行，修正已在源码中规避的 `return` 缺陷）；`tests/run_nemu_cosim.py` 新增 NEMU 边界自检（`vl=0` 不写回 + vm=0/e16/e64/m2 四类非法各触发 1 次 `EX_II`），`mini_asm` 增加 CSR/`mret`/`la` 支持；`tests/phase2/xs_emu/build.sh` 固定 `PERF_NITER=2000`（此前重建会退化为 20000）；修正 `perf_analysis.md` 中 RVV 退休指令 3→2、标量 IPC 3.2→3.4、RVV 慢 17%→21% 等口径；新增 §6.4 公平性口径（RVV 内核 VLMAX=16，属 2× lane 工作量，11.8× 仅为上界，主结论用 lane 公平的 9.8×），并同步 README/PROGRESS/release_report/design/PR/ipd/PPT；刷新 `docs/phase3/{00,01,02,03,04}` 与 `nemu_standalone_perf_*.log` |
 | 2026-11-03 | 香山内集成闭环（T3.8/T3.10/T3.11，关闭 B2/B3）：`vdot` 接入 VFEX0 并在昆明湖 V2 上重生成 RTL、重建 emu；修复两个集成缺陷（D-07 `vl==0` 屏蔽写回导致架构 vd 变随机值；D-08 `VlData` 仅 8 bit 使 SEW/LMUL/vill 检查被优化掉）；定向 7/7 difftest 0 mismatch、非法 5/5、性能四内核全绿；实测加速比 9.8×（对标量，8-lane 公平）/11.8×（对 RVV 基线，16-lane，属上界）；新增 `docs/phase2/logs/xs_emu_*.log`、`tests/phase2/xs_emu/{vdot_directed,vdot_illegal,vdot_perf}.S`、`build.sh`、`run_emu.sh`；`test_report.md` §7/§8/§10、`perf_analysis.md` §6、`patches/xiangshan-vdot-integration.md` §5/§8/§10 同步 |

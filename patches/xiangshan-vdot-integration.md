@@ -1,14 +1,17 @@
 # 香山昆明湖 V2 集成说明（VDot / vdot.vv）
 
 > **状态：已执行并验证（2026-11-03，VERIFIED）**
-> 已在 `build/xs-work/XiangShan` @ `16ae9dd`（KunminghuV2 配置，VLEN=128）完成 I1–I7：新增 `FuType.vdot`、
+> 已在 `build/xs-work/XiangShan` @ `16ae9dd`（昆明湖 V2 基线，`DefaultConfig`，VLEN=128）完成 I1–I7：新增 `FuType.vdot`、
 > 译码 pattern、`VdotCfg`/VFEX0 注册与 `VDotUnit`（`VecPipedFuncUnit`），重新生成 RTL 并重建 emu。
 > 系统级结果：定向用例 7/7（difftest 0 mismatch）、非法配置 5/5、性能四内核全部 `PERF result=OK`。
+> 可复现改动：本目录 [`xiangshan-vdot.patch`](xiangshan-vdot.patch)（5 文件 +119/−7，基于 `16ae9dd`，`git apply -p1` 即可；说明见 [`xiangshan-vdot-patch.md`](xiangshan-vdot-patch.md)，脚本 `scripts/apply_xiangshan_patch.sh`）。
 >
 > 实际文件与符号见 §8 核对表；实测数据与证据链见 §10。文中 §2/§3/§5 的示例代码是**原始设计意图**，
 > 落地时有两处必须按 §5 的修正说明实现（`vtype` 来源、`vl==0` 写回），否则会出现 D-07/D-08 两个集成缺陷。
 >
-> 已冻结、可直接复用的部分是数据通路本身：[rtl/verilog/VDot.v](file:///home/dbqxxs/xsriscv/cieriscv/rtl/verilog/VDot.v)（已验证）与 [rtl/chisel/VDot.scala](file:///home/dbqxxs/xsriscv/cieriscv/rtl/chisel/VDot.scala)（已编译并生成 `VDotCore.sv`，同向量等价回归 1518/1518，见 `docs/phase2/logs/09_chisel_equiv.log`）。
+> 已冻结、可直接复用的部分是数据通路本身：[rtl/verilog/VDot.v](file:///home/dbqxxs/xsriscv/cieriscv/rtl/verilog/VDot.v)（三模式，已验证）与 [rtl/chisel/VDot.scala](file:///home/dbqxxs/xsriscv/cieriscv/rtl/chisel/VDot.scala)（已编译并生成 `VDotCore.sv`，475 行，同向量等价回归 3047/3047，见 `docs/phase2/logs/09_chisel_equiv.log`）。
+
+> **三模式更新（2026-11-08）**：译码新增 `vdot4x2.vv`/`vtdot.vv` 两个 `BitPat`，`FuType.vdot` 保持不变，用 `fuOpType[1:0]=0/1/2` 区分；`VDotUnit` 已重写为三模式共享数据通路，并通过 `mill -i xiangshan.compile`（573 任务 0 error）。本说明下方若出现"单一 `vdot.vv`"的表述，均按此追补理解。
 
 ---
 
@@ -210,7 +213,7 @@ EOF
 | B1 | 集成译码与 uop 类型后重跑 B0 | 与 B0 完全一致（零回归） |
 | B2 | 集成 VFu 与写回后重跑 B0 | 零回归 |
 | B3 | 跑 `vdot_smoke.S` | 单条结果正确 |
-| B4 | 把 `tests/vectors/vdot_vectors.txt` 的 1518 条用例映射为汇编程序批量跑 | 1518/1518 与 Python 期望一致 |
+| B4 | 把 `tests/vectors/vdot_vectors.txt` 的 3047 条三模式用例映射为汇编程序批量跑 | 3047/3047 与 Python 期望一致 |
 | B5 | 与 NEMU difftest（阶段三） | 无 difftest 报错 |
 
 **B1/B2 的"零回归"是硬门禁**：任何一条既有用例失败，先回滚本次改动再定位，不允许带着回归继续往下做。

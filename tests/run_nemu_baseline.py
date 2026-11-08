@@ -45,7 +45,12 @@ def build_program_baseline(data_off, ncases, verdict_reg=M.A0):
     a.addi(M.T0, M.X0, 0x200)
     a.csrs(M.CSR_MSTATUS, M.T0)
     a.print_str("VBASE\n")
-    a.addi(M.T5, M.X0, ncases)
+    if ncases <= 2047:
+        a.addi(M.T5, M.X0, ncases)
+    else:
+        a.lui(M.T5, ncases >> 12)
+        if ncases & 0xFFF:
+            a.addi(M.T5, M.T5, ncases & 0xFFF)
 
     a.label("loop")
     a.vsetvli(M.T1, M.X0, 0x00)        # e8, m1  -> vl=16，用于字节装载
@@ -82,8 +87,9 @@ def main():
     args = ap.parse_args()
 
     cases = load_cases(args.vectors)
-    run = select_runnable(cases)
-    print(f"vectors total={len(cases)} runnable={len(run)}")
+    # 基线实现的是 INT8 语义，只与 mode=0 用例比对；INT4/三值不在本脚本范围。
+    run = [c for c in select_runnable(cases) if c["mode"] == 0]
+    print(f"vectors total={len(cases)} runnable={len(run)} (int8 only)")
 
     img, sym, data_off = M.build_image(
         [(hex128_bytes(c["vs1"]), hex128_bytes(c["vs2"])) for c in run],

@@ -25,7 +25,7 @@ run_step() {
   fi
 }
 
-# 1) 单元级：模型自检 + 向量 + C 模型 + 构建 + 1518 条 RTL 仿真 + 波形
+# 1) 单元级：模型自检 + 向量 + C 模型 + 构建 + 3047 条三模式 RTL 仿真 + 波形
 run_step "unit" bash scripts/run_unit_tests.sh
 
 # 2) 严格 lint（-Wall 下任何告警都会以非 0 退出）

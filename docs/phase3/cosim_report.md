@@ -1,8 +1,8 @@
 # 阶段三 · NEMU 协同仿真与性能实测报告
 
 > 项目：2026CIE · qxriscv · xiangshan-vdot
-> 指令：`vdot.vv`（SEW=8, K=8, VLEN=128, OUT_W=32）
-> 本报告对应进度表 T3.1–T3.7，所有结论均可由本目录下日志复现。
+> 指令族：`vdot.vv`（INT8）、`vdot4x2.vv`（INT4 打包、双结果）、`vtdot.vv`（BitNet b1.58 三值、双结果）
+> 本报告对应进度表 T3.1–T3.7；§1–§5 的 1513 口径是 **v1.2 INT8 单模式历史记录**，三模式现行口径见 §1.1 与 [01_nemu_cosim.log](file:///home/dbqxxs/xsriscv/cieriscv/docs/phase3/01_nemu_cosim.log)。
 
 ---
 
@@ -10,13 +10,24 @@
 
 | 目标 | 手段 | 结论 |
 |---|---|---|
-| 证明自定义指令在指令集模拟器语义正确 | 在 NEMU（香山同源）中实现 `vdot.vv`，用 1513 条写回用例自测 | 1513/1513 与金标准一致 |
+| 证明自定义指令在指令集模拟器语义正确 | 在 NEMU（香山同源）中实现三条 `vdot` 指令，用 3032 条可运行用例自测 | **3032/3032 与金标准一致**（4551 结果字） |
 | 复核边界配置的架构行为 | NEMU 边界自检：vl=0 不写回；4 类非法配置各触发 1 次 `EX_II` | 均 PASS |
-| 证明 RTL 与 NEMU 逐位一致 | 同一用例集分别驱动 RTL 与 NEMU，直接 diff 结果 | 1513 vs 1513，0 mismatch |
+| 证明 RTL 与 NEMU 逐位一致 | 同一用例集分别驱动 RTL 与 NEMU，直接 diff 结果 | **4551 vs 4551，0 mismatch** |
 | 量化"有/无该指令"的代价差 | 用纯 RVV 1.0 组合序列实现同语义基线，在 NEMU 上跑通并计数 | 数据通路指令 6→1；单用例核心指令 14→7 |
 | 给出实测性能口径 | Verilator 单元测试台统计延迟/吞吐 | 延迟 3 cycle，吞吐 1 inst/cycle |
 
 **不在范围**：香山昆明湖 V2 平台上的真实周期数与加速比（2026-11-03 已在 `emu` 上完成，见 [性能分析 §6](file:///home/dbqxxs/xsriscv/cieriscv/docs/phase3/perf_analysis.md)；本报告仍只覆盖 NEMU/RTL 协同与单元级口径）。
+
+### 1.1 三模式现行口径（2026-11-08）
+
+| 项 | 结果 |
+|---|---|
+| NEMU 译码/执行 | 三条指令同一套编码空间（opcode 0x57、funct3 000、funct6 `111111/111110/111101`） |
+| 可运行用例 | **3032**（int8=1513、int4x2=759、vtdot=760） |
+| 结果字比对 | **4551 vs 4551**（双结果用例各比对 r0/r1），mismatch **0** |
+| 边界自检 | 三模式 `vl=0` 不写回（哨兵 `0x11223344/0x55667788` 保持）；4 类非法配置各触发 1 次 `EX_II`，三模式全 PASS |
+| 模型修复 | `mini_asm` 的 vs1/vs2 参数顺序修正（D-09）；`vdot_sext4` 改为语句表达式宏以适配 `CONFIG_PERF_OPT` |
+| 证据 | [01_nemu_cosim.log](file:///home/dbqxxs/xsriscv/cieriscv/docs/phase3/01_nemu_cosim.log)、`build/nemu/cosim_vectors.txt`、[nemu-vdot.patch](file:///home/dbqxxs/xsriscv/cieriscv/patches/nemu-vdot.patch)（170 行） |
 
 ---
 
@@ -66,27 +77,27 @@ python3 tests/run_nemu_baseline.py
 
 | 项 | 值 |
 |---|---|
-| 用例总数 / 可运行（合法且写回） | 1518 / 1513 |
-| 观测到的结果行数 | 1513 |
+| 用例总数 / 可运行（合法且写回） | **3047 / 3032**（INT8 1513、INT4 759、三值 760） |
+| 观测到的结果字行数 | **4551**（双结果用例按 r0/r1 两行输出） |
 | 与金标准不符 | 0 |
 | 多余输出 | 0 |
 | NEMU 退出码 | 0（`nemu_trap` code 0，GOOD TRAP） |
-| 边界：`vl=0` 不写回（`vd` 保持哨兵 `11223344`） | 1/1 PASS |
-| 边界：非法配置触发 `EX_II`（vm=0 / e16 / e64 / m2） | 4/4 PASS |
+| 边界：`vl=0` 不写回（`vd` 保持哨兵 `11223344/55667788`） | 3/3 PASS（三模式各 1） |
+| 边界：非法配置触发 `EX_II`（vm=0 / e16 / e64 / m2） | 12/12 PASS（三模式各 4） |
 | **判定** | **PASS** |
 
 ### 4.2 T3.4 RTL ↔ NEMU 直接 diff
 
-日志：`docs/phase3/01_nemu_cosim.log`（`rtl_vs_nemu` 行）、`docs/phase3/02_rtl_export.txt`
+日志：`docs/phase3/02_cosim.log`（`rtl_vs_nemu` 行）、`docs/phase3/02_rtl_export.txt`
 
 | 项 | 值 |
 |---|---|
-| RTL 导出行数 | 1513 |
-| NEMU 输出行数 | 1513 |
-| 低 32 bit 逐例比对不匹配 | **0** |
+| RTL 导出结果字行数 | **4551** |
+| NEMU 输出结果字行数 | **4551** |
+| 逐字比对不匹配 | **0** |
 | **判定** | **PASS** |
 
-比对口径：只比较 `vd[31:0]`（本指令的规范结果）。高 96 bit 由 RTL 恒置 0、NEMU 亦置 0，但未纳入判定，避免与 tail-agnostic 策略耦合。
+比对口径：按 32-bit 结果字逐行比对；INT8 每例 1 字，INT4/三值每例 2 字（`r0`→`vd[31:0]`、`r1`→`vd[63:32]`）。`vd[127:64]` 恒 0 由 RTL 单元测试的 128-bit 全宽比对与断言覆盖，不在本 diff 中重复判定。
 
 ### 4.3 T3.5 基线（纯 RVV 组合）等价性
 
@@ -116,8 +127,8 @@ RTL 单元测试台日志：`docs/phase3/04_rtl_unit_perf.log`
 |---|---|---|
 | 单条延迟 | 3 cycle | `in_valid` 拉高到 `out_valid` 的周期数 |
 | 流式吞吐 | 1.0 inst/cycle | 连续 1024 条背靠背发射，`(完成数-1)/(末-首完成周期)` |
-| 全测试台总周期 | 10185 | 1513 用例 + 1024 流式 + 补充自检 + 排空 |
-| 功能用例 | 1513/1513 PASS | 同 4.1 用例集 |
+| 全测试台总周期 | **21588** | 3047 用例 + 1024 流式 + 补充自检 + 排空 |
+| 功能用例 | **3032/3032 PASS** | 同 4.1 用例集（4551 结果字） |
 
 NEMU 动态指令数（同一 1513 用例镜像；日志字段 `nemu_dyn_instr`，见 `01_nemu_cosim.log` 与 `03_baseline_nemu.log`）：
 
@@ -128,7 +139,7 @@ NEMU 动态指令数（同一 1513 用例镜像；日志字段 `nemu_dyn_instr`�
 
 注：动态指令数含 UART 十六进制打印等测试脚手架开销，故绝对比例偏保守；纯算法部分的差异为上表"14 vs 7"。
 
-> 口径说明：本表性能取自 1513 条**写回子集**的运行，因此日志中的 `latency_illegal` 为 0（子集不含非法用例），非功能异常。全量 1518 条运行的非法延迟为 3 cycle，见 `docs/phase4/03_rtl_full_perf.log`。
+> 口径说明：本表性能取自 1513 条**INT8 写回子集**的运行，因此日志中的 `latency_illegal` 为 0（子集不含非法用例），非功能异常。全量 3047 条三模式运行的非法延迟为 3 cycle，见 `docs/phase2/logs/03_unit_test.log`。
 
 ---
 
@@ -151,10 +162,10 @@ NEMU 动态指令数（同一 1513 用例镜像；日志字段 `nemu_dyn_instr`�
 
 ## 6. 结论与表述约束
 
-- `vdot.vv` 的 NEMU 语义实现与金标准、RTL 三方一致（1513/1513，0 mismatch）。
-- NEMU 边界自检通过：`vl=0` 不写回，4 类非法配置各触发一次 `EX_II`。
-- 相对纯 RVV 1.0 组合基线，数据通路指令数 6→1，单用例核心指令数 14→7。
-- 覆盖分工：1518 条向量中 5 条不写回（1 条 `vl=0` + 4 条非法），由 RTL 全量回归、本报告边界自检与香山 emu 汇编用例分别覆盖；1513 条写回用例用于 NEMU↔金标准↔RTL 三方逐位比对。
+- 三条 `vdot` 指令的 NEMU 语义实现与金标准、RTL 三方一致（**3032 用例 / 4551 结果字，0 mismatch**）。
+- NEMU 边界自检通过：三模式 `vl=0` 不写回（3/3），4 类非法配置在三模式下各触发一次 `EX_II`（12/12）。
+- 相对纯 RVV 1.0 组合基线（INT8），数据通路指令数 6→1，单用例核心指令数 14→7。
+- 覆盖分工：3047 条向量中 15 条不参与可运行集——13 条 `vl=0`/非法配置（INT8 5、INT4 4、三值 4）+ 2 条保留 mode；其余 3032 条用于 NEMU↔金标准↔RTL 三方逐位比对。
 - 本报告只覆盖 **指令级仿真与单元级 RTL**；香山昆明湖 V2 `emu` 上的整程序周期与加速比见 [`perf_analysis.md` §6](file:///home/dbqxxs/xsriscv/cieriscv/docs/phase3/perf_analysis.md)。
 
 ## 7. 附件

@@ -1,14 +1,14 @@
-# 阶段二 测试报告：vdot.vv 功能单元单元级验证
+# 阶段二 测试报告：vdot 指令族（INT8 / INT4 / 三值）单元级验证
 
 | 项目 | 内容 |
 |---|---|
-| 被测对象 | `rtl/verilog/VDot.v`（VLEN=128, K=8, ACC_W=20, OUT_W=32） |
+| 被测对象 | `rtl/verilog/VDot.v`（VLEN=128, K=8, ACC_W=20, OUT_W=32, DUAL_W=12, TERN_W=9） |
 | 对应规格 | [ipd/01 设计规格书](file:///home/dbqxxs/xsriscv/cieriscv/ipd/01_vdot指令与微架构设计规格书.md) |
 | 测试方案 | [ipd/02 测试与验证方案](file:///home/dbqxxs/xsriscv/cieriscv/ipd/02_测试与验证方案.md) |
-| 报告版本 | v1.2（2026-11-02：补充 Chisel 等价回归、行覆盖率、逐 lane / 重放 / 保留 SEW 自检，并修正 `total_cycles`） |
-| 执行日期 | 2026-10-27（初版）；2026-11-01（迁移后复跑）；2026-11-02（v1.2 回归复跑） |
+| 报告版本 | v1.3（2026-11-08：扩展为三模式，新增 INT4/三值用例、模式自检与三模式 NEMU/Chisel 协同） |
+| 执行日期 | 2026-10-27（初版）；2026-11-01（迁移后复跑）；2026-11-02（v1.2 回归复跑）；2026-11-08（v1.3 三模式回归） |
 | 执行人 | B（验证） |
-| **总体结论** | **PASS** —— 1518/1518 用例通过，0 失败；单条延迟 3 cycle，吞吐 1 inst/cycle；行覆盖率 36/36 = 100%；Chisel 版等价回归 1518/1518 |
+| **总体结论** | **PASS** —— 3047/3047 用例通过，0 失败；单条延迟 3 cycle，三模式吞吐 1 inst/cycle；行覆盖率 55/55 = 100%；Chisel 版等价回归 3047/3047 |
 
 ---
 
@@ -16,27 +16,31 @@
 
 | 指标 | 实测结果 |
 |---|---|
+| 用例总数（INT8 1518 / INT4 763 / 三值 764 / 保留 mode 2） | **3047 / 3047 通过** |
 | 定向用例（功能 + 边界 + 配置/异常） | 18 / 18 通过 |
-| 随机用例（均匀分布） | 1000 / 1000 通过 |
-| 边界密集随机用例（取值域 8 个极值） | 500 / 500 通过 |
-| 背靠背流式用例（按序比对） | 1024 / 1024 通过 |
-| 三方模型一致性（Python / C / C++ 内联，1518 条） | 1518 / 1518 一致 |
-| 逐 lane 定位自检（lane0..7 单独非零） | 8 / 8 通过 |
+| 随机用例（均匀分布，三模式） | 全部通过 |
+| 边界密集随机用例（取值域 8 个极值） | 全部通过 |
+| 背靠背流式用例（按序比对，三模式） | 1024 / 1024 通过 |
+| 三方模型一致性（Python / C / C++ 内联，3047 条） | 3047 / 3047 一致 |
+| INT4 nibble 逐位定位（16 个 nibble 单独非零） | 16 / 16 通过 |
+| 三值边界（`a=-128` 取反、`code=11` 归零、全 0） | 3 / 3 通过 |
+| 逐 lane 定位自检（INT8 lane0..7 单独非零） | 8 / 8 通过 |
 | `vstart` 幂等重放自检（同一请求连续重放 3 次） | 3 / 3 通过 |
 | 保留 SEW 编码（`vsew=4`）拒绝 | PASS（illegal，不写回） |
+| 保留模式（`mode=3`）拒绝 | PASS（illegal，不写回） |
 | 复位空闲检查 | PASS |
 | 失败用例 | **0** |
 | 单条延迟（in_valid → out_valid） | **3 cycle**（写回路径与 illegal 路径均为 3） |
-| 吞吐（无依赖连续发射） | **1.0 inst/cycle** |
-| 总仿真周期 | 10220 cycle |
-| 行覆盖率（Verilator `--coverage-line`，`--annotate-min 1`） | **36 / 36 = 100%** |
-| Chisel 生成 RTL 等价回归（同一测试台/同一 1518 向量） | **1518 / 1518 PASS**，3 cycle，1.0 inst/cycle |
+| 吞吐（无依赖连续发射，三模式） | **1.0 inst/cycle** |
+| 总仿真周期 | 21588 cycle |
+| 行覆盖率（Verilator `--coverage-line`，`--annotate-min 1`） | **55 / 55 = 100%** |
+| Chisel 生成 RTL 等价回归（同一测试台/同一 3047 三模式向量） | **3047 / 3047 PASS**，3 cycle，三模式 1.0 inst/cycle |
 | 仿真断言（`--assert`） | 0 触发（高位清零、valid/illegal 互斥等） |
 | 128 bit 全宽比对 | 全部用例均比对整 128 bit，非仅低 32 bit |
 
-关键边界结论全部命中：`+127×8 → 0x0001F808`、`-128×-128×8 → 0x00020000`（19 bit 边界）、`-130048 → 0xFFFE0400`。
+关键边界结论全部命中：`+127×8 → 0x0001F808`、`-128×-128×8 → 0x00020000`（19 bit 边界）、`-130048 → 0xFFFE0400`；INT4 组和 `[-448,+512]`、三值组和 `[-1024,+1024]` 均在 12 bit 内，`a=-128` 的三值取反 `+128` 由 9 bit 承载。
 
-> 本报告覆盖**单元级**（模块级 RTL 仿真）、**生成 RTL 等价回归**与**香山昆明湖 V2 emu 系统级验证**（§8）。NEMU 协同仿真在阶段三完成，见 [协同仿真报告](../phase3/cosim_report.md)。
+> 本报告覆盖**单元级**（模块级 RTL 仿真）、**生成 RTL 等价回归**与**香山昆明湖 V2 emu 系统级验证**（§8，系统级为 INT8）。NEMU 三模式协同仿真见 [协同仿真日志](../phase3/01_nemu_cosim.log)。
 
 ---
 
@@ -52,11 +56,13 @@
 | 版本控制 | git，被测 RTL commit 见仓库提交记录 |
 | 波形 | `docs/phase2/waveform/vdot_unit.vcd`（前 400 周期，GTKWave 可打开） |
 
-**环境说明**：阶段二执行时主机无 Verilator 预装与 RISC-V 工具链，因此采用"从源码构建 Verilator + 模块级 C++ 测试台"的方式完成可执行的 RTL 仿真；这保证了本报告数据来自**真实 RTL 仿真**而非行为模型。2026-11-01 环境迁移后 Verilator 5.034 可用，单元回归可复跑（1518/1518 PASS）。
+**环境说明**：阶段二执行时主机无 Verilator 预装与 RISC-V 工具链，因此采用"从源码构建 Verilator + 模块级 C++ 测试台"的方式完成可执行的 RTL 仿真；这保证了本报告数据来自**真实 RTL 仿真**而非行为模型。2026-11-01 环境迁移后 Verilator 5.034 可用，单元回归可复跑（当前 v1.3 为 3047/3047 PASS）。
 
-> **2026-11-01 迁移后复跑**：工作区迁至 `/home/dbqxxs/xsriscv/cieriscv`，重新执行 `bash scripts/run_unit_tests.sh`，结果与初版一致：1518/1518 PASS、延迟 3 cycle、吞吐 1 inst/cycle。迁移导致 `build/obj_dir` 中的旧 Makefile 指向旧目录而构建失败，已由 `scripts/build_sim.sh` 的陈旧产物自动清理修复。
+> **2026-11-01 迁移后复跑**：工作区迁至 `/home/dbqxxs/xsriscv/cieriscv`，重新执行 `bash scripts/run_unit_tests.sh`，当次（单模式）结果：1518/1518 PASS、延迟 3 cycle、吞吐 1 inst/cycle。迁移导致 `build/obj_dir` 中的旧 Makefile 指向旧目录而构建失败，已由 `scripts/build_sim.sh` 的陈旧产物自动清理修复。
 >
-> **2026-11-02 v1.2 复跑**：测试台新增 4 类自检（复位空闲、逐 lane、`vstart` 重放、保留 SEW），并接入行覆盖率与 Chisel 等价回归。`total_cycles` 由 10148 增加到 **10220**（新增自检用例与排空开销所致），功能结论不变：1518/1518 PASS、0 失败。
+> **2026-11-02 v1.2 复跑**：测试台新增 4 类自检（复位空闲、逐 lane、`vstart` 重放、保留 SEW），并接入行覆盖率与 Chisel 等价回归。`total_cycles` 由 10148 增加到 **10220**（新增自检用例与排空开销所致），单模式功能结论不变：1518/1518 PASS、0 失败。
+>
+> **2026-11-08 v1.3 三模式复跑**：新增 `vdot4x2.vv`（763 条）与 `vtdot.vv`（764 条），加保留 mode 2 条，用例总数 **3047**；`total_cycles` 增至 **21588**，行覆盖率 **55/55**，Chisel 等价 **3047/3047**，三模式吞吐均 1.0 inst/cycle，0 失败。
 
 ---
 
@@ -78,7 +84,7 @@ tests/tb/tb_vdot.cpp：流式测试中的期望由 C++ 内联模型独立计算
 2. **RTL 不做自我参照**：测试台不读取 RTL 输出生成期望；失败时只报告"期望 vs 实际"。
 3. **交叉实现校验**：
    - 流式测试中期望值由测试台内的 **C++ 内联模型**独立计算，与 Python 模型构成跨语言双实现；
-   - `tests/model/vdot_ref.c`（C11）对全部 **1518 条向量**独立重算并比对，构成第三份实现；
+   - `tests/model/vdot_ref.c`（C11）对全部 **3047 条三模式向量**独立重算并比对，构成第三份实现；
    - 三份实现均不共享代码，结果两两一致后才用于判定 RTL。
 4. **C 模型的双重用途**：同一文件保留纯函数接口 `vdot_vv()`，可直接移植进 NEMU（阶段三 3.1.1）。
 
@@ -107,7 +113,7 @@ tests/tb/tb_vdot.cpp：流式测试中的期望由 C++ 内联模型独立计算
 
 ### 3.4 Chisel 版等价回归
 
-`rtl/chisel/VDot.scala` 经 mill + firtool 生成 `rtl/chisel/VDotCore.sv`（214 行），再由 `rtl/chisel/VDotWrap.v` 把端口映射为与 `rtl/verilog/VDot.v` 完全相同的外部接口。因此可直接复用**同一测试台、同一 1518 条向量、同一补充自检**，对两版实现逐位比对结果：
+`rtl/chisel/VDot.scala` 经 mill + firtool 生成 `rtl/chisel/VDotCore.sv`（475 行，含 `io_in_mode[1:0]`），再由 `rtl/chisel/VDotWrap.v` 把端口映射为与 `rtl/verilog/VDot.v` 完全相同的外部接口。因此可直接复用**同一测试台、同一 3047 条三模式向量、同一补充自检**，对两版实现逐位比对结果：
 
 - 判定口径与 §3.3 完全相同；
 - 两版输出（`cases_pass`、`latency_write`、`throughput`、`total_cycles`）必须一致；
@@ -173,9 +179,9 @@ tests/tb/tb_vdot.cpp：流式测试中的期望由 C++ 内联模型独立计算
 | 单条延迟 L | 请求被接收的时钟沿到 `out_valid` 置位 | **3 cycle** |
 | 非法指令延迟 | 同上，`out_illegal` 路径 | **3 cycle** |
 | 吞吐 TP | 无依赖连续发射，平均每条约占周期 | **1.0 inst/cycle** |
-| 总仿真周期 | 1518 用例 + 1024 流式 + 补充自检 + 排空开销 | **10220 cycle** |
+| 总仿真周期 | 3047 用例 + 1024 流式 + 补充自检 + 排空开销 | **21588 cycle** |
 
-与设计规格 §3.1 声明的 3 级流水（EX1 乘 / EX2 加法树 / WB 格式化）一致，无额外气泡。Chisel 生成 RTL 在同一测试台下的时序指标完全相同（3 cycle / 1.0 inst/cycle / 10220 cycle）。
+与设计规格 §4.1 声明的 3 级流水（EX1 乘法/三值选择 / EX2 加法树 / WB 格式化）一致，无额外气泡。Chisel 生成 RTL 在同一测试台下的时序指标完全相同（3 cycle / 1.0 inst/cycle / 21588 cycle）。
 
 ---
 
@@ -185,16 +191,19 @@ tests/tb/tb_vdot.cpp：流式测试中的期望由 C++ 内联模型独立计算
 |---|---|
 | Python 参考模型闭式边界自检（5 项） | PASS（`logs/00_ref_model_selfcheck.log`） |
 | C 参考模型闭式边界自检（5 项） | PASS（`logs/05_c_model_selfcheck.log`） |
-| C 参考模型对 1518 条向量交叉比对 | **1518 / 1518 PASS**，0 失败（`logs/06_c_model_crosscheck.log`） |
-| RTL 断言：`out_vd[127:32] == 0` | 0 次违反 |
+| C 参考模型对 3047 条三模式向量交叉比对 | **3047 / 3047 PASS**，0 失败（`logs/06_c_model_crosscheck.log`） |
+| RTL 断言：高位通道清零（INT8 `[127:32]` / 双结果 `[127:64]`，按 `out_mode` 区分） | 0 次违反 |
 | RTL 断言：valid 与 illegal 互斥 | 0 次违反 |
 | RTL 断言：dirty 必须伴随 valid | 0 次违反 |
-| 参数合法性（`K==8`、`ACC_W>=19`、`OUT_W>=ACC_W`） | 仿真启动即检查，未触发 |
+| 参数合法性（`K==8`、`ACC_W>=19`、`OUT_W>=ACC_W`、`DUAL_W>=12`、`TERN_W>=9`） | 仿真启动即检查，未触发 |
 | 复位空闲（`out_valid/out_illegal/out_dirty=0`，`vd=0`） | PASS（`logs/03_unit_test.log`） |
 | 逐 lane 通道定位（8 个 lane 各自单独非零） | 8 / 8 PASS（`logs/03_unit_test.log`） |
 | `vstart` 幂等重放（同一请求连续 3 次） | 3 / 3 PASS（`logs/03_unit_test.log`） |
 | 保留 SEW 编码 `vsew=4` 拒绝 | PASS（`logs/03_unit_test.log`） |
-| Chisel 生成 RTL 与 Verilog 版同向量等价 | 1518 / 1518 PASS（`logs/09_chisel_equiv.log`） |
+| 保留模式 `mode=3` 拒绝 | PASS（`logs/03_unit_test.log`） |
+| INT4 nibble 逐位定位 | 16 / 16 PASS（`logs/03_unit_test.log`） |
+| 三值边界（`a=-128` 取反、`code=11` 归零） | 3 / 3 PASS（`logs/03_unit_test.log`） |
+| Chisel 生成 RTL 与 Verilog 版同向量等价 | 3047 / 3047 PASS（`logs/09_chisel_equiv.log`） |
 | Chisel 版断言（firtool 生成的 SV 断言） | 0 次违反（`logs/09_chisel_equiv.log`） |
 
 ---
@@ -211,8 +220,9 @@ tests/tb/tb_vdot.cpp：流式测试中的期望由 C++ 内联模型独立计算
 | D-06 | Chisel 生成 RTL | firtool 报 `unicode escape not supported in string` | 断言消息含中文，firtool 1.62.1 不支持 SV 字符串 Unicode 转义 | 断言消息改为 ASCII 英文 |
 | D-07 | 香山集成/emu | `vl=0` 用例 difftest 报 `v3` 为随机值（`right=0xcafebabedeadbeef`，`wrong=0xbe6cbc9f82570e7a`） | FU 用 `vecWen` 屏蔽写回，但提交阶段仍把架构 `vd` 映射改到重命名后的物理寄存器，该寄存器未被写 → 架构值变成随机数 | 写回端口保持有效，`vstart>=vl` 时回写 `oldVd`（与 `VIAluFix` 同一约定）；不再用 `vecWen` 抑制 |
 | D-08 | 香山集成/RTL | 生成 RTL 中 SEW/LMUL/vill 检查全部消失，只剩 `~vm` 与 `vstart` | `DataConfig.VlData` 宽度仅 8 bit（只承载 `vl`），`outVConfig.vtype` 恒 0 被综合优化掉 | 非法判定改用控制通路 `outVecCtrl.vill/vsew/vlmul`（与 `VIAluFix` 一致） |
+| D-09 | 测试/NEMU 协同 | 三值 one-hot 用例得到 `a[0]*codes[0]`，激活与权重错位 | `mini_asm._vdot_vv(funct6, vd, vs2, vs1)` 参数命名与 RISC-V 字段顺序相反（vs1 应在 bits[19:15]） | 改为 `(funct6, vd, vs1, vs2)`，三条指令方法与 `build_program` 调用点统一（v1.3） |
 
-**模块级功能缺陷数：0**（1518 用例未发现 DUT 功能错误）。D-04 是接口位宽导致的功能性误判风险，已由新增 TC-E05 覆盖并在 v1.2 修复。D-07/D-08 属系统集成阶段暴露的问题——模块级测试台只有 `vecWen` 与显式 `vtype` 端口，无法覆盖“重命名/提交语义”和“`VlData` 仅 8 bit”的约束，故仅在香山 emu 中可见。
+**模块级功能缺陷数：0**（3047 条三模式用例未发现 DUT 功能错误）。D-04 是接口位宽导致的功能性误判风险，已由新增 TC-E05 覆盖并在 v1.2 修复。D-07/D-08 属系统集成阶段暴露的问题——模块级测试台只有 `vecWen` 与显式 `vtype` 端口，无法覆盖“重命名/提交语义”和“`VlData` 仅 8 bit”的约束，故仅在香山 emu 中可见。v1.3 另发现并修复测试侧缺陷 D-09（`mini_asm` 的 vs1/vs2 参数顺序与 RISC-V 字段相反，导致 NEMU 三值用例激活/权重写反）。
 
 ---
 
@@ -222,15 +232,15 @@ tests/tb/tb_vdot.cpp：流式测试中的期望由 C++ 内联模型独立计算
 
 | # | 项目 | 状态 | 证据 |
 |---|---|---|---|
-| U-01 | 在香山昆明湖 V2 中集成并仿真 | **已关闭** | 香山 @ `16ae9dd`（KunminghuV2 配置，VLEN=128），`vdot` 接入 VFEX0；重新生成 RTL（`build/rtl/VDotUnit.sv`）并重建 emu；`vdot_directed` 在 emu + difftest 下 `HIT GOOD TRAP`（992 inst / 13,565 cyc），0 mismatch。见 `logs/xs_emu_vdot_directed.log` |
+| U-01 | 在香山昆明湖 V2 中集成并仿真 | **已关闭** | 香山 @ `16ae9dd`（昆明湖 V2 基线，`DefaultConfig`，VLEN=128），`vdot` 接入 VFEX0；重新生成 RTL（`build/rtl/VDotUnit.sv`）并重建 emu；`vdot_directed` 在 emu + difftest 下 `HIT GOOD TRAP`（992 inst / 13,565 cyc），0 mismatch。见 `logs/xs_emu_vdot_directed.log` |
 | U-02 | 汇编级测试（`.S` + emu 运行） | **已关闭** | `tests/phase2/xs_emu/vdot_directed.S` 7 用例（含 `vl=0`）全部与 NEMU 一致（`DIRECTED fails=00000000`）；`vdot_illegal.S` 5 类非法配置 5/5 触发 illegal trap（`ILLEGAL traps=00000005 other=00000000`）。见 `logs/xs_emu_vdot_illegal.log` |
-| U-03 | NEMU 扩展 + difftest 协同仿真 | **已完成**（阶段三 T3.1–T3.4） | 1513/1513，RTL↔NEMU 0 mismatch，见 `docs/phase3/cosim_report.md`；本轮 emu 里的 difftest 参考模型即该 NEMU 扩展 |
+| U-03 | NEMU 扩展 + difftest 协同仿真 | **已完成（三模式）** | 3032 用例 / 4551 结果字 / 0 mismatch；三模式 boundary 全 PASS，见 `docs/phase3/01_nemu_cosim.log`；本轮 emu 里的 difftest 参考模型即该 NEMU 扩展 |
 | U-04 | 基线 vs vdot 真实加速比 | **已关闭（实测）** | emu 实测 cycleCnt（NITER=2000）：empty 11,108 / vdot 12,123 / rvv 23,109 / scalar 21,022；`vdot` 0.51 cyc/iter vs 标量 4.96 cyc/iter ≈ **9.8×**（lane 公平；对 RVV 基线 6.00 cyc/iter 为 11.8×，16-lane 上界，见 `perf_analysis.md` §6.4）。见 `docs/phase3/perf_analysis.md` §6 与 `logs/xs_emu_perf_*.log` |
-| U-05 | 综合面积/时序 | 部分关闭 | generic 综合 4186 单元 / 172 FF / 25 级 R2R，见 `docs/phase4/release_report.md` §3；PDK 级 µm²/ns 待环境 |
+| U-05 | 综合面积/时序 | 部分关闭 | generic 综合 4186 单元 / 172 FF / 25 级 R2R（**INT8 单模式历史值**），见 `docs/phase4/release_report.md` §3；三模式面积与 PDK 级 µm²/ns 待环境 |
 
 ### 8.1 验证口径与边界
 
-1. **可以宣称**：`vdot` 已作为香山昆明湖 V2 的向量功能单元完成集成，并在香山 `emu`（Verilator）上以 difftest 对齐扩展后的 NEMU 运行通过；模块级 1518 条用例与系统级 7+5 条汇编用例全部通过。
+1. **可以宣称**：`vdot` 指令族已作为香山昆明湖 V2 的向量功能单元完成集成；模块级 3047 条三模式用例全部通过；INT8 已在香山 `emu`（Verilator）+ difftest 上跑通 7+5 条汇编用例。INT4/三值的系统级 emu 尚未重跑（Scala 编译已 PASS）。
 2. **不可宣称**：未经综合/布局布线的面积、时序（U-05），以及未在 FPGA/流片平台上的结果。性能数据为 Verilator 功能级仿真的周期数，仅用于横向对比，不代表最终频率下的绝对性能。
 3. **已知工具边界**：本 emu 构建中 difftest 对“陷阱指令”存在参考模型侧的一步滞后（DUT 提交 `mepc/mcause/mstatus` 后，NEMU 在同一比较点仍为旧值），用一条普通非法指令 `.word 0` 即可复现（`logs/xs_emu_baseline_illegal_difftest.log`），与本模块无关。因此非法配置用例采用程序内架构自检（`--no-diff`）方式，见 `tests/phase2/xs_emu/run_emu.sh`。
 4. **`vstart` 约束**：本实现按整寄存器语义，`vstart != 0` 一律按非法指令处理（`VDotUnit` 与 NEMU 扩展一致），不支持向量重启。
@@ -241,26 +251,26 @@ tests/tb/tb_vdot.cpp：流式测试中的期望由 C++ 内联模型独立计算
 
 | 覆盖维度 | 目标 | 实际 |
 |---|---|---|
-| 符号组合（正/负/混合/零） | 4 类全覆盖 | 4/4 |
-| 边界值（最大正/最大负/零/19 bit 边界） | 全覆盖 | 4/4 |
-| lane 位置（lane0..lane7 单独有效） | 至少各 1 次 | **逐 lane 自检 8/8** + TC-B06/B07 + 随机 |
-| 配置组合（vl=0/正常、vm、SEW、LMUL） | 公开接口全组合 | 合法 2 类 + 非法 5 类（含保留 SEW `vsew=4..7`） |
+| 符号组合（正/负/混合/零，三模式） | 全覆盖 | 全通过 |
+| 边界值（INT8 19-bit / INT4 12-bit / 三值 9-bit 边界） | 全覆盖 | 全通过 |
+| lane / nibble 位置（INT8 lane0..7、INT4 nibble0..15 单独有效） | 至少各 1 次 | **逐 lane 8/8 + nibble 16/16** + 随机 |
+| 配置组合（vl=0/正常、vm、SEW、LMUL、mode） | 公开接口全组合 | 合法 2 类 + 非法 6 类（含保留 SEW 与 mode=3） |
 | 流水行为（单条、背靠背、按序、重放） | 全覆盖 | 4 类均验证 |
 | 复位行为 | 复位后空闲 | PASS |
-| 代码行覆盖 | ≥95% | **36/36 = 100%**（Verilator `--coverage-line`，`--annotate-min 1`，见 `logs/07_coverage.log`） |
-| Chisel 版等价 | 与 Verilog 同结果 | 1518/1518 PASS |
-| 系统级集成（香山昆明湖 V2 emu） | 合法功能 + 非法配置 | 合法 7/7（difftest 0 mismatch）+ 非法 5/5（架构自检） |
+| 代码行覆盖 | ≥95% | **55/55 = 100%**（Verilator `--coverage-line`，`--annotate-min 1`，见 `logs/07_coverage.log`） |
+| Chisel 版等价 | 与 Verilog 同结果 | 3047/3047 PASS |
+| 系统级集成（香山昆明湖 V2 emu） | 合法功能 + 非法配置 | INT8 合法 7/7（difftest 0 mismatch）+ 非法 5/5（架构自检） |
 
 ---
 
 ## 10. 结论与下一步
 
-1. `vdot.vv` 功能单元模块级 RTL 功能正确：1518 条用例（含 3 类必测与 4 类边界）全部通过，128 bit 全宽比对无差异；逐 lane 8/8、`vstart` 重放 3/3、保留 SEW 拒绝、复位空闲均 PASS。
-2. 时序符合设计：3 级流水、单条延迟 3 cycle、吞吐 1 inst/cycle、无气泡。
-3. 位宽设计经边界用例证伪风险已消除（131072 边界正确）。
-4. 证据链完整：行覆盖率 36/36 = 100%；Chisel 生成 RTL 与 Verilog 版在同一测试台/同一向量下 1518/1518 等价。
-5. 系统级证据（本轮补齐）：模块已接入香山昆明湖 V2 并在 emu 上与 NEMU difftest 对齐运行——合法用例 7/7、非法配置 5/5，形成"单元级 + 系统级"双证据链（U-01/U-02 关闭）；同时得到实测加速比 9.8×（U-04）。
-6. 剩余（阶段四/五）：PDK 级面积时序（U-05）与真实平台/FPGA 结果。
+1. 三条指令功能正确：3047 条用例（INT8 1518 / INT4 763 / 三值 764 / 保留 mode 2，含 3 类必测与 4 类边界）全部通过，128 bit 全宽比对无差异；逐 lane 8/8、nibble 16/16、三值边界 3/3、`vstart` 重放 3/3、保留 SEW 与保留 mode 拒绝、复位空闲均 PASS。
+2. 时序符合设计：3 级流水、单条延迟 3 cycle、三模式吞吐 1 inst/cycle、无气泡；MAC/cycle = 8:16:16。
+3. 位宽设计经边界用例证伪风险已消除：INT8 `+131072`（19 bit）、INT4 组和 `[-448,+512]`（12 bit）、三值 `a=-128` 取反 `+128`（9 bit）与组和 `+1024`（12 bit）全部命中。
+4. 证据链完整：行覆盖率 55/55 = 100%；Chisel 生成 RTL 与 Verilog 版在同一测试台/同一 3047 条三模式向量下 3047/3047 等价；NEMU 三模式协同 3032 用例 / 4551 字 / 0 fail。
+5. 系统级证据（INT8，2026-11-03）：模块已接入香山昆明湖 V2 并在 emu 上与 NEMU difftest 对齐运行——合法用例 7/7、非法配置 5/5，形成"单元级 + 系统级"双证据链（U-01/U-02 关闭）；同时得到实测加速比 9.8×（U-04）。三模式 Scala 编译 PASS，INT4/三值的 emu 重跑列为 B6。
+6. 剩余（阶段四/五）：三模式综合面积、PDK 级面积时序（U-05）与真实平台/FPGA 结果。
 
 ---
 
@@ -312,19 +322,19 @@ bash tests/phase2/xs_emu/run_emu.sh            # 六个用例依次运行，日�
 | 向量生成日志 | `docs/phase2/logs/01_gen_vectors.log` |
 | C 模型编译日志 | `docs/phase2/logs/04_c_model_build.log` |
 | C 模型自检日志 | `docs/phase2/logs/05_c_model_selfcheck.log` |
-| C 模型交叉比对日志（1518 条） | `docs/phase2/logs/06_c_model_crosscheck.log` |
+| C 模型交叉比对日志（3047 条三模式） | `docs/phase2/logs/06_c_model_crosscheck.log` |
 | 仿真构建日志 | `docs/phase2/logs/02_build.log` |
 | RTL 单元测试运行日志 | `docs/phase2/logs/03_unit_test.log` |
 | 行覆盖率构建日志 | `docs/phase2/logs/07_coverage_build.log` |
 | 行覆盖率运行日志 | `docs/phase2/logs/07_coverage_run.log` |
-| 行覆盖率统计（36/36 = 100%） | `docs/phase2/logs/07_coverage.log` |
+| 行覆盖率统计（55/55 = 100%） | `docs/phase2/logs/07_coverage.log` |
 | 行覆盖率标注源码 | `build/cov_line_annotated/VDot.v` |
 | Chisel 等价回归构建日志 | `docs/phase2/logs/08_chisel_build.log` |
-| Chisel 等价回归运行日志（1518/1518） | `docs/phase2/logs/09_chisel_equiv.log` |
+| Chisel 等价回归运行日志（3047/3047） | `docs/phase2/logs/09_chisel_equiv.log` |
 | Chisel 生成的 SystemVerilog | `rtl/chisel/VDotCore.sv` |
 | Chisel 端口适配壳 | `rtl/chisel/VDotWrap.v` |
 | 波形 | `docs/phase2/waveform/vdot_unit.vcd` |
-| 测试向量（1518 条） | `tests/vectors/vdot_vectors.txt` |
+| 测试向量（3047 条三模式） | `tests/vectors/vdot_vectors.txt` |
 | 香山 emu · 定向用例（difftest，7/7） | `docs/phase2/logs/xs_emu_vdot_directed.log` |
 | 香山 emu · 非法配置（自检 5/5） | `docs/phase2/logs/xs_emu_vdot_illegal.log` |
 | 香山 emu · 非法配置 difftest 误报复现 | `docs/phase2/logs/xs_emu_vdot_illegal_difftest.log` |

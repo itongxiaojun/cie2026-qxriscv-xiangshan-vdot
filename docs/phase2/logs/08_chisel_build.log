@@ -10,5 +10,5 @@ g++    tb_vdot.o verilated.o verilated_vcd_c.o verilated_threads.o VVDot__ALL.a 
 rm VVDot__ALL.verilator_deplist.tmp
 make: 离开目录“/home/dbqxxs/xsriscv/cieriscv/build/obj_chisel”
 - V e r i l a t i o n   R e p o r t: Verilator 5.034 2025-02-24 rev v5.034
-- Verilator: Built from 0.040 MB sources in 3 modules, into 0.062 MB in 10 C++ files needing 0.000 MB
-- Verilator: Walltime 12.542 s (elab=0.002, cvt=0.015, bld=12.508); cpu 0.060 s on 48 threads; alloced 49.723 MB
+- Verilator: Built from 0.049 MB sources in 3 modules, into 0.118 MB in 10 C++ files needing 0.000 MB
+- Verilator: Walltime 12.831 s (elab=0.007, cvt=0.037, bld=12.765); cpu 0.102 s on 48 threads; alloced 52.523 MB

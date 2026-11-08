@@ -1,0 +1,15 @@
+NEMU co-simulation (vdot family vs golden model)
+nemu_binary      : .tools/nemu/build/riscv64-nemu-interpreter
+image_prefix     : build/nemu/vdot_cosim.bin (98336 bytes total)
+image_data_off   : int8=288 int4x2=496 vtdot=480
+uart_mmio        : 0x310b0000
+cases_expected   : 3032 int8=1513 int4x2=759 vtdot=760
+word_expected    : 4551
+word_observed    : 4551
+cases_fail       : 0
+cases_extra      : 0
+nemu_exit_code   : 0
+nemu_dyn_instr   : 72,224
+boundary_checks  : int8=PASS(vd=11223344/55667788, traps=00000004); int4x2=PASS(vd=11223344/55667788, traps=00000004); vtdot=PASS(vd=11223344/55667788, traps=00000004)
+rtl_vs_nemu      : lines=4551/nemu=4551 mismatch=0
+RESULT           : PASS

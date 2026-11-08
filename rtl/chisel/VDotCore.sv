@@ -70,145 +70,406 @@
   `endif // STOP_COND
 `endif // not def STOP_COND_
 
-module VDotCore(	// rtl/chisel/VDot.scala:37:7
-  input          clock,	// rtl/chisel/VDot.scala:37:7
-                 reset,	// rtl/chisel/VDot.scala:37:7
-                 io_in_valid,	// rtl/chisel/VDot.scala:48:14
-  input  [127:0] io_in_vs1,	// rtl/chisel/VDot.scala:48:14
-                 io_in_vs2,	// rtl/chisel/VDot.scala:48:14
-  input          io_in_vlZero,	// rtl/chisel/VDot.scala:48:14
-                 io_in_vm,	// rtl/chisel/VDot.scala:48:14
-  input  [2:0]   io_in_sew,	// rtl/chisel/VDot.scala:48:14
-                 io_in_lmul,	// rtl/chisel/VDot.scala:48:14
-  output [127:0] io_out_vd,	// rtl/chisel/VDot.scala:48:14
-  output         io_out_valid,	// rtl/chisel/VDot.scala:48:14
-                 io_out_illegal,	// rtl/chisel/VDot.scala:48:14
-                 io_out_dirty	// rtl/chisel/VDot.scala:48:14
+module VDotCore(	// rtl/chisel/VDot.scala:62:7
+  input          clock,	// rtl/chisel/VDot.scala:62:7
+                 reset,	// rtl/chisel/VDot.scala:62:7
+                 io_in_valid,	// rtl/chisel/VDot.scala:78:14
+  input  [127:0] io_in_vs1,	// rtl/chisel/VDot.scala:78:14
+                 io_in_vs2,	// rtl/chisel/VDot.scala:78:14
+  input          io_in_vlZero,	// rtl/chisel/VDot.scala:78:14
+                 io_in_vm,	// rtl/chisel/VDot.scala:78:14
+  input  [2:0]   io_in_sew,	// rtl/chisel/VDot.scala:78:14
+                 io_in_lmul,	// rtl/chisel/VDot.scala:78:14
+  input  [1:0]   io_in_mode,	// rtl/chisel/VDot.scala:78:14
+  output [127:0] io_out_vd,	// rtl/chisel/VDot.scala:78:14
+  output         io_out_valid,	// rtl/chisel/VDot.scala:78:14
+                 io_out_illegal,	// rtl/chisel/VDot.scala:78:14
+                 io_out_dirty	// rtl/chisel/VDot.scala:78:14
 );
 
-  reg         s1Illegal;	// rtl/chisel/VDot.scala:85:26
-  reg         s1Write;	// rtl/chisel/VDot.scala:86:26
-  reg [15:0]  s1Prod_0;	// rtl/chisel/VDot.scala:87:26
-  reg [15:0]  s1Prod_1;	// rtl/chisel/VDot.scala:87:26
-  reg [15:0]  s1Prod_2;	// rtl/chisel/VDot.scala:87:26
-  reg [15:0]  s1Prod_3;	// rtl/chisel/VDot.scala:87:26
-  reg [15:0]  s1Prod_4;	// rtl/chisel/VDot.scala:87:26
-  reg [15:0]  s1Prod_5;	// rtl/chisel/VDot.scala:87:26
-  reg [15:0]  s1Prod_6;	// rtl/chisel/VDot.scala:87:26
-  reg [15:0]  s1Prod_7;	// rtl/chisel/VDot.scala:87:26
-  reg         s2Illegal;	// rtl/chisel/VDot.scala:92:26
-  reg         s2Write;	// rtl/chisel/VDot.scala:93:26
-  reg [19:0]  s2Sum;	// rtl/chisel/VDot.scala:95:26
-  reg [127:0] io_out_vd_REG;	// rtl/chisel/VDot.scala:101:28
-  reg         io_out_valid_REG;	// rtl/chisel/VDot.scala:102:28
-  reg         io_out_illegal_REG;	// rtl/chisel/VDot.scala:103:28
-  reg         io_out_dirty_REG;	// rtl/chisel/VDot.scala:104:28
-  `ifndef SYNTHESIS	// rtl/chisel/VDot.scala:111:11
-    always @(posedge clock) begin	// rtl/chisel/VDot.scala:111:11
-      automatic logic _GEN;	// rtl/chisel/VDot.scala:111:11
-      _GEN = io_out_valid_REG & ~reset;	// rtl/chisel/VDot.scala:102:28, :111:11
-      if (_GEN & (|(io_out_vd_REG[127:32]))) begin	// rtl/chisel/VDot.scala:101:28, :111:{11,21,38}
-        if (`ASSERT_VERBOSE_COND_)	// rtl/chisel/VDot.scala:111:11
-          $error("Assertion failed: VDot: high lanes of vd must be zero\n    at VDot.scala:111 assert(io.out.vd(VLEN - 1, OUTW) === 0.U, \"VDot: high lanes of vd must be zero\")\n");	// rtl/chisel/VDot.scala:111:11
-        if (`STOP_COND_)	// rtl/chisel/VDot.scala:111:11
-          $fatal;	// rtl/chisel/VDot.scala:111:11
+  reg [1:0]   s1Mode;	// rtl/chisel/VDot.scala:139:26
+  reg         s1Illegal;	// rtl/chisel/VDot.scala:140:26
+  reg         s1Write;	// rtl/chisel/VDot.scala:141:26
+  reg [15:0]  s1Prod8_0;	// rtl/chisel/VDot.scala:142:26
+  reg [15:0]  s1Prod8_1;	// rtl/chisel/VDot.scala:142:26
+  reg [15:0]  s1Prod8_2;	// rtl/chisel/VDot.scala:142:26
+  reg [15:0]  s1Prod8_3;	// rtl/chisel/VDot.scala:142:26
+  reg [15:0]  s1Prod8_4;	// rtl/chisel/VDot.scala:142:26
+  reg [15:0]  s1Prod8_5;	// rtl/chisel/VDot.scala:142:26
+  reg [15:0]  s1Prod8_6;	// rtl/chisel/VDot.scala:142:26
+  reg [15:0]  s1Prod8_7;	// rtl/chisel/VDot.scala:142:26
+  reg [8:0]   s1Dual9_0;	// rtl/chisel/VDot.scala:143:26
+  reg [8:0]   s1Dual9_1;	// rtl/chisel/VDot.scala:143:26
+  reg [8:0]   s1Dual9_2;	// rtl/chisel/VDot.scala:143:26
+  reg [8:0]   s1Dual9_3;	// rtl/chisel/VDot.scala:143:26
+  reg [8:0]   s1Dual9_4;	// rtl/chisel/VDot.scala:143:26
+  reg [8:0]   s1Dual9_5;	// rtl/chisel/VDot.scala:143:26
+  reg [8:0]   s1Dual9_6;	// rtl/chisel/VDot.scala:143:26
+  reg [8:0]   s1Dual9_7;	// rtl/chisel/VDot.scala:143:26
+  reg [8:0]   s1Dual9_8;	// rtl/chisel/VDot.scala:143:26
+  reg [8:0]   s1Dual9_9;	// rtl/chisel/VDot.scala:143:26
+  reg [8:0]   s1Dual9_10;	// rtl/chisel/VDot.scala:143:26
+  reg [8:0]   s1Dual9_11;	// rtl/chisel/VDot.scala:143:26
+  reg [8:0]   s1Dual9_12;	// rtl/chisel/VDot.scala:143:26
+  reg [8:0]   s1Dual9_13;	// rtl/chisel/VDot.scala:143:26
+  reg [8:0]   s1Dual9_14;	// rtl/chisel/VDot.scala:143:26
+  reg [8:0]   s1Dual9_15;	// rtl/chisel/VDot.scala:143:26
+  reg [1:0]   s2Mode;	// rtl/chisel/VDot.scala:150:26
+  reg         s2Illegal;	// rtl/chisel/VDot.scala:151:26
+  reg         s2Write;	// rtl/chisel/VDot.scala:152:26
+  reg [19:0]  s2Sum;	// rtl/chisel/VDot.scala:154:22
+  reg [11:0]  s2R0;	// rtl/chisel/VDot.scala:155:22
+  reg [11:0]  s2R1;	// rtl/chisel/VDot.scala:156:22
+  reg [127:0] io_out_vd_REG;	// rtl/chisel/VDot.scala:163:28
+  reg         io_out_valid_REG;	// rtl/chisel/VDot.scala:164:28
+  reg         io_out_illegal_REG;	// rtl/chisel/VDot.scala:165:28
+  reg         io_out_dirty_REG;	// rtl/chisel/VDot.scala:166:28
+  reg [1:0]   outMode;	// rtl/chisel/VDot.scala:167:27
+  `ifndef SYNTHESIS	// rtl/chisel/VDot.scala:175:13
+    always @(posedge clock) begin	// rtl/chisel/VDot.scala:175:13
+      if (io_out_valid_REG & ~(|outMode) & ~reset & (|(io_out_vd_REG[127:32]))) begin	// rtl/chisel/VDot.scala:163:28, :164:28, :167:27, :174:18, :175:{13,23,40}
+        if (`ASSERT_VERBOSE_COND_)	// rtl/chisel/VDot.scala:175:13
+          $error("Assertion failed: VDot: high lanes of vd must be zero (INT8)\n    at VDot.scala:175 assert(io.out.vd(VLEN - 1, OUTW) === 0.U, \"VDot: high lanes of vd must be zero (INT8)\")\n");	// rtl/chisel/VDot.scala:175:13
+        if (`STOP_COND_)	// rtl/chisel/VDot.scala:175:13
+          $fatal;	// rtl/chisel/VDot.scala:175:13
       end
-      if (_GEN & io_out_illegal_REG) begin	// rtl/chisel/VDot.scala:103:28, :111:11, :112:11
-        if (`ASSERT_VERBOSE_COND_)	// rtl/chisel/VDot.scala:112:11
-          $error("Assertion failed: VDot: valid and illegal must not be together\n    at VDot.scala:112 assert(!io.out.illegal, \"VDot: valid and illegal must not be together\")\n");	// rtl/chisel/VDot.scala:112:11
-        if (`STOP_COND_)	// rtl/chisel/VDot.scala:112:11
-          $fatal;	// rtl/chisel/VDot.scala:112:11
+      if (io_out_valid_REG & (|outMode) & ~reset & (|(io_out_vd_REG[127:64]))) begin	// rtl/chisel/VDot.scala:163:28, :164:28, :167:27, :174:18, :175:13, :177:{13,23,44}
+        if (`ASSERT_VERBOSE_COND_)	// rtl/chisel/VDot.scala:177:13
+          $error("Assertion failed: VDot: high lanes of vd must be zero (dual)\n    at VDot.scala:177 assert(io.out.vd(VLEN - 1, 2 * OUTW) === 0.U, \"VDot: high lanes of vd must be zero (dual)\")\n");	// rtl/chisel/VDot.scala:177:13
+        if (`STOP_COND_)	// rtl/chisel/VDot.scala:177:13
+          $fatal;	// rtl/chisel/VDot.scala:177:13
+      end
+      if (io_out_valid_REG & ~reset & io_out_illegal_REG) begin	// rtl/chisel/VDot.scala:164:28, :165:28, :175:13, :179:11
+        if (`ASSERT_VERBOSE_COND_)	// rtl/chisel/VDot.scala:179:11
+          $error("Assertion failed: VDot: valid and illegal must not be together\n    at VDot.scala:179 assert(!io.out.illegal, \"VDot: valid and illegal must not be together\")\n");	// rtl/chisel/VDot.scala:179:11
+        if (`STOP_COND_)	// rtl/chisel/VDot.scala:179:11
+          $fatal;	// rtl/chisel/VDot.scala:179:11
       end
     end // always @(posedge)
   `endif // not def SYNTHESIS
-  always @(posedge clock) begin	// rtl/chisel/VDot.scala:37:7
-    if (reset) begin	// rtl/chisel/VDot.scala:37:7
-      s1Illegal <= 1'h0;	// rtl/chisel/VDot.scala:80:37, :85:26
-      s1Write <= 1'h0;	// rtl/chisel/VDot.scala:80:37, :86:26
-      s2Illegal <= 1'h0;	// rtl/chisel/VDot.scala:80:37, :92:26
-      s2Write <= 1'h0;	// rtl/chisel/VDot.scala:80:37, :93:26
-      s2Sum <= 20'h0;	// rtl/chisel/VDot.scala:95:26
-      io_out_valid_REG <= 1'h0;	// rtl/chisel/VDot.scala:80:37, :102:28
-      io_out_illegal_REG <= 1'h0;	// rtl/chisel/VDot.scala:80:37, :103:28
-      io_out_dirty_REG <= 1'h0;	// rtl/chisel/VDot.scala:80:37, :104:28
+  always @(posedge clock) begin	// rtl/chisel/VDot.scala:62:7
+    automatic logic [7:0] prod4_0 =
+      {{4{io_in_vs1[3]}}, io_in_vs1[3:0]} * {{4{io_in_vs2[3]}}, io_in_vs2[3:0]};	// rtl/chisel/VDot.scala:84:49, :113:67
+    automatic logic [7:0] prod4_1 =
+      {{4{io_in_vs1[7]}}, io_in_vs1[7:4]} * {{4{io_in_vs2[7]}}, io_in_vs2[7:4]};	// rtl/chisel/VDot.scala:84:49, :108:67, :113:67
+    automatic logic [7:0] prod4_2 =
+      {{4{io_in_vs1[11]}}, io_in_vs1[11:8]} * {{4{io_in_vs2[11]}}, io_in_vs2[11:8]};	// rtl/chisel/VDot.scala:84:49, :113:67
+    automatic logic [7:0] prod4_3 =
+      {{4{io_in_vs1[15]}}, io_in_vs1[15:12]} * {{4{io_in_vs2[15]}}, io_in_vs2[15:12]};	// rtl/chisel/VDot.scala:84:49, :108:67, :113:67
+    automatic logic [7:0] prod4_4 =
+      {{4{io_in_vs1[19]}}, io_in_vs1[19:16]} * {{4{io_in_vs2[19]}}, io_in_vs2[19:16]};	// rtl/chisel/VDot.scala:84:49, :113:67
+    automatic logic [7:0] prod4_5 =
+      {{4{io_in_vs1[23]}}, io_in_vs1[23:20]} * {{4{io_in_vs2[23]}}, io_in_vs2[23:20]};	// rtl/chisel/VDot.scala:84:49, :108:67, :113:67
+    automatic logic [7:0] prod4_6 =
+      {{4{io_in_vs1[27]}}, io_in_vs1[27:24]} * {{4{io_in_vs2[27]}}, io_in_vs2[27:24]};	// rtl/chisel/VDot.scala:84:49, :113:67
+    automatic logic [7:0] prod4_7 =
+      {{4{io_in_vs1[31]}}, io_in_vs1[31:28]} * {{4{io_in_vs2[31]}}, io_in_vs2[31:28]};	// rtl/chisel/VDot.scala:84:49, :108:67, :113:67
+    automatic logic [7:0] prod4_8 =
+      {{4{io_in_vs1[35]}}, io_in_vs1[35:32]} * {{4{io_in_vs2[35]}}, io_in_vs2[35:32]};	// rtl/chisel/VDot.scala:84:49, :113:67
+    automatic logic [7:0] prod4_9 =
+      {{4{io_in_vs1[39]}}, io_in_vs1[39:36]} * {{4{io_in_vs2[39]}}, io_in_vs2[39:36]};	// rtl/chisel/VDot.scala:84:49, :108:67, :113:67
+    automatic logic [7:0] prod4_10 =
+      {{4{io_in_vs1[43]}}, io_in_vs1[43:40]} * {{4{io_in_vs2[43]}}, io_in_vs2[43:40]};	// rtl/chisel/VDot.scala:84:49, :113:67
+    automatic logic [7:0] prod4_11 =
+      {{4{io_in_vs1[47]}}, io_in_vs1[47:44]} * {{4{io_in_vs2[47]}}, io_in_vs2[47:44]};	// rtl/chisel/VDot.scala:84:49, :108:67, :113:67
+    automatic logic [7:0] prod4_12 =
+      {{4{io_in_vs1[51]}}, io_in_vs1[51:48]} * {{4{io_in_vs2[51]}}, io_in_vs2[51:48]};	// rtl/chisel/VDot.scala:84:49, :113:67
+    automatic logic [7:0] prod4_13 =
+      {{4{io_in_vs1[55]}}, io_in_vs1[55:52]} * {{4{io_in_vs2[55]}}, io_in_vs2[55:52]};	// rtl/chisel/VDot.scala:84:49, :108:67, :113:67
+    automatic logic [7:0] prod4_14 =
+      {{4{io_in_vs1[59]}}, io_in_vs1[59:56]} * {{4{io_in_vs2[59]}}, io_in_vs2[59:56]};	// rtl/chisel/VDot.scala:84:49, :113:67
+    automatic logic [7:0] prod4_15 =
+      {{4{io_in_vs1[63]}}, io_in_vs1[63:60]} * {{4{io_in_vs2[63]}}, io_in_vs2[63:60]};	// rtl/chisel/VDot.scala:84:49, :108:67, :113:67
+    automatic logic       _dual9_T_105 = io_in_mode == 2'h1;	// rtl/chisel/VDot.scala:129:20
+    automatic logic       _dual9_T_109 = io_in_mode == 2'h2;	// rtl/chisel/VDot.scala:124:20, :130:22
+    if (reset) begin	// rtl/chisel/VDot.scala:62:7
+      s1Mode <= 2'h0;	// rtl/chisel/VDot.scala:139:26
+      s1Illegal <= 1'h0;	// rtl/chisel/VDot.scala:133:37, :140:26
+      s1Write <= 1'h0;	// rtl/chisel/VDot.scala:133:37, :141:26
+      s2Mode <= 2'h0;	// rtl/chisel/VDot.scala:139:26, :150:26
+      s2Illegal <= 1'h0;	// rtl/chisel/VDot.scala:133:37, :151:26
+      s2Write <= 1'h0;	// rtl/chisel/VDot.scala:133:37, :152:26
+      s2Sum <= 20'h0;	// rtl/chisel/VDot.scala:154:22
+      s2R0 <= 12'h0;	// rtl/chisel/VDot.scala:155:22
+      s2R1 <= 12'h0;	// rtl/chisel/VDot.scala:155:22, :156:22
+      io_out_valid_REG <= 1'h0;	// rtl/chisel/VDot.scala:133:37, :164:28
+      io_out_illegal_REG <= 1'h0;	// rtl/chisel/VDot.scala:133:37, :165:28
+      io_out_dirty_REG <= 1'h0;	// rtl/chisel/VDot.scala:133:37, :166:28
     end
-    else begin	// rtl/chisel/VDot.scala:37:7
-      automatic logic legal = io_in_vm & io_in_sew == 3'h0 & io_in_lmul == 3'h0;	// rtl/chisel/VDot.scala:80:{37,45,59}
-      s1Illegal <= io_in_valid & ~legal;	// rtl/chisel/VDot.scala:80:45, :85:{26,39,42}
-      s1Write <= io_in_valid & legal & ~io_in_vlZero;	// rtl/chisel/VDot.scala:80:45, :86:{26,48,51}
-      s2Illegal <= s1Illegal;	// rtl/chisel/VDot.scala:85:26, :92:26
-      s2Write <= s1Write;	// rtl/chisel/VDot.scala:86:26, :93:26
+    else begin	// rtl/chisel/VDot.scala:62:7
+      automatic logic legal =
+        io_in_vm & io_in_sew == 3'h0 & io_in_lmul == 3'h0 & io_in_mode != 2'h3;	// rtl/chisel/VDot.scala:90:13, :133:{37,59,67}, :134:26
+      s1Mode <= io_in_mode;	// rtl/chisel/VDot.scala:139:26
+      s1Illegal <= io_in_valid & ~legal;	// rtl/chisel/VDot.scala:133:67, :140:{26,39,42}
+      s1Write <= io_in_valid & legal & ~io_in_vlZero;	// rtl/chisel/VDot.scala:133:67, :141:{26,48,51}
+      s2Mode <= s1Mode;	// rtl/chisel/VDot.scala:139:26, :150:26
+      s2Illegal <= s1Illegal;	// rtl/chisel/VDot.scala:140:26, :151:26
+      s2Write <= s1Write;	// rtl/chisel/VDot.scala:141:26, :152:26
       s2Sum <=
-        {{4{s1Prod_0[15]}}, s1Prod_0} + {{4{s1Prod_1[15]}}, s1Prod_1}
-        + {{4{s1Prod_2[15]}}, s1Prod_2} + {{4{s1Prod_3[15]}}, s1Prod_3}
-        + {{4{s1Prod_4[15]}}, s1Prod_4} + {{4{s1Prod_5[15]}}, s1Prod_5}
-        + {{4{s1Prod_6[15]}}, s1Prod_6} + {{4{s1Prod_7[15]}}, s1Prod_7};	// rtl/chisel/VDot.scala:57:20, :65:30, :87:26, :95:26
-      io_out_valid_REG <= s2Write;	// rtl/chisel/VDot.scala:93:26, :102:28
-      io_out_illegal_REG <= s2Illegal;	// rtl/chisel/VDot.scala:92:26, :103:28
-      io_out_dirty_REG <= s2Write;	// rtl/chisel/VDot.scala:93:26, :104:28
+        {{4{s1Prod8_0[15]}}, s1Prod8_0} + {{4{s1Prod8_1[15]}}, s1Prod8_1}
+        + {{4{s1Prod8_2[15]}}, s1Prod8_2} + {{4{s1Prod8_3[15]}}, s1Prod8_3}
+        + {{4{s1Prod8_4[15]}}, s1Prod8_4} + {{4{s1Prod8_5[15]}}, s1Prod8_5}
+        + {{4{s1Prod8_6[15]}}, s1Prod8_6} + {{4{s1Prod8_7[15]}}, s1Prod8_7};	// rtl/chisel/VDot.scala:90:20, :98:30, :142:26, :154:22
+      s2R0 <=
+        {{3{s1Dual9_0[8]}}, s1Dual9_0} + {{3{s1Dual9_1[8]}}, s1Dual9_1}
+        + {{3{s1Dual9_2[8]}}, s1Dual9_2} + {{3{s1Dual9_3[8]}}, s1Dual9_3}
+        + {{3{s1Dual9_4[8]}}, s1Dual9_4} + {{3{s1Dual9_5[8]}}, s1Dual9_5}
+        + {{3{s1Dual9_6[8]}}, s1Dual9_6} + {{3{s1Dual9_7[8]}}, s1Dual9_7};	// rtl/chisel/VDot.scala:90:20, :98:30, :143:26, :155:22
+      s2R1 <=
+        {{3{s1Dual9_8[8]}}, s1Dual9_8} + {{3{s1Dual9_9[8]}}, s1Dual9_9}
+        + {{3{s1Dual9_10[8]}}, s1Dual9_10} + {{3{s1Dual9_11[8]}}, s1Dual9_11}
+        + {{3{s1Dual9_12[8]}}, s1Dual9_12} + {{3{s1Dual9_13[8]}}, s1Dual9_13}
+        + {{3{s1Dual9_14[8]}}, s1Dual9_14} + {{3{s1Dual9_15[8]}}, s1Dual9_15};	// rtl/chisel/VDot.scala:90:20, :98:30, :143:26, :156:22
+      io_out_valid_REG <= s2Write;	// rtl/chisel/VDot.scala:152:26, :164:28
+      io_out_illegal_REG <= s2Illegal;	// rtl/chisel/VDot.scala:151:26, :165:28
+      io_out_dirty_REG <= s2Write;	// rtl/chisel/VDot.scala:152:26, :166:28
     end
-    s1Prod_0 <= {{8{io_in_vs1[7]}}, io_in_vs1[7:0]} * {{8{io_in_vs2[7]}}, io_in_vs2[7:0]};	// rtl/chisel/VDot.scala:51:50, :77:39, :87:26
-    s1Prod_1 <=
-      {{8{io_in_vs1[15]}}, io_in_vs1[15:8]} * {{8{io_in_vs2[15]}}, io_in_vs2[15:8]};	// rtl/chisel/VDot.scala:51:50, :77:39, :87:26
-    s1Prod_2 <=
-      {{8{io_in_vs1[23]}}, io_in_vs1[23:16]} * {{8{io_in_vs2[23]}}, io_in_vs2[23:16]};	// rtl/chisel/VDot.scala:51:50, :77:39, :87:26
-    s1Prod_3 <=
-      {{8{io_in_vs1[31]}}, io_in_vs1[31:24]} * {{8{io_in_vs2[31]}}, io_in_vs2[31:24]};	// rtl/chisel/VDot.scala:51:50, :77:39, :87:26
-    s1Prod_4 <=
-      {{8{io_in_vs1[39]}}, io_in_vs1[39:32]} * {{8{io_in_vs2[39]}}, io_in_vs2[39:32]};	// rtl/chisel/VDot.scala:51:50, :77:39, :87:26
-    s1Prod_5 <=
-      {{8{io_in_vs1[47]}}, io_in_vs1[47:40]} * {{8{io_in_vs2[47]}}, io_in_vs2[47:40]};	// rtl/chisel/VDot.scala:51:50, :77:39, :87:26
-    s1Prod_6 <=
-      {{8{io_in_vs1[55]}}, io_in_vs1[55:48]} * {{8{io_in_vs2[55]}}, io_in_vs2[55:48]};	// rtl/chisel/VDot.scala:51:50, :77:39, :87:26
-    s1Prod_7 <=
-      {{8{io_in_vs1[63]}}, io_in_vs1[63:56]} * {{8{io_in_vs2[63]}}, io_in_vs2[63:56]};	// rtl/chisel/VDot.scala:51:50, :77:39, :87:26
-    io_out_vd_REG <= {96'h0, {12{s2Sum[19]}}, s2Sum};	// rtl/chisel/VDot.scala:57:{13,20}, :95:26, :99:22, :101:28
+    s1Prod8_0 <=
+      {{8{io_in_vs1[7]}}, io_in_vs1[7:0]} * {{8{io_in_vs2[7]}}, io_in_vs2[7:0]};	// rtl/chisel/VDot.scala:81:50, :108:67, :142:26
+    s1Prod8_1 <=
+      {{8{io_in_vs1[15]}}, io_in_vs1[15:8]} * {{8{io_in_vs2[15]}}, io_in_vs2[15:8]};	// rtl/chisel/VDot.scala:81:50, :108:67, :142:26
+    s1Prod8_2 <=
+      {{8{io_in_vs1[23]}}, io_in_vs1[23:16]} * {{8{io_in_vs2[23]}}, io_in_vs2[23:16]};	// rtl/chisel/VDot.scala:81:50, :108:67, :142:26
+    s1Prod8_3 <=
+      {{8{io_in_vs1[31]}}, io_in_vs1[31:24]} * {{8{io_in_vs2[31]}}, io_in_vs2[31:24]};	// rtl/chisel/VDot.scala:81:50, :108:67, :142:26
+    s1Prod8_4 <=
+      {{8{io_in_vs1[39]}}, io_in_vs1[39:32]} * {{8{io_in_vs2[39]}}, io_in_vs2[39:32]};	// rtl/chisel/VDot.scala:81:50, :108:67, :142:26
+    s1Prod8_5 <=
+      {{8{io_in_vs1[47]}}, io_in_vs1[47:40]} * {{8{io_in_vs2[47]}}, io_in_vs2[47:40]};	// rtl/chisel/VDot.scala:81:50, :108:67, :142:26
+    s1Prod8_6 <=
+      {{8{io_in_vs1[55]}}, io_in_vs1[55:48]} * {{8{io_in_vs2[55]}}, io_in_vs2[55:48]};	// rtl/chisel/VDot.scala:81:50, :108:67, :142:26
+    s1Prod8_7 <=
+      {{8{io_in_vs1[63]}}, io_in_vs1[63:56]} * {{8{io_in_vs2[63]}}, io_in_vs2[63:56]};	// rtl/chisel/VDot.scala:81:50, :108:67, :142:26
+    s1Dual9_0 <=
+      _dual9_T_105
+        ? {prod4_0[7], prod4_0}
+        : _dual9_T_109
+            ? (io_in_vs2[1:0] == 2'h1
+                 ? {io_in_vs1[7], io_in_vs1[7:0]}
+                 : io_in_vs2[1:0] == 2'h2 ? 9'h0 - {io_in_vs1[7], io_in_vs1[7:0]} : 9'h0)
+            : 9'h0;	// rtl/chisel/VDot.scala:81:50, :90:{8,20}, :113:67, :119:54, :120:{40,42}, :121:47, :123:{8,18}, :124:{10,20}, :129:{8,20}, :130:{10,22}, :143:26
+    s1Dual9_1 <=
+      _dual9_T_105
+        ? {prod4_1[7], prod4_1}
+        : _dual9_T_109
+            ? (io_in_vs2[3:2] == 2'h1
+                 ? {io_in_vs1[15], io_in_vs1[15:8]}
+                 : io_in_vs2[3:2] == 2'h2
+                     ? 9'h0 - {io_in_vs1[15], io_in_vs1[15:8]}
+                     : 9'h0)
+            : 9'h0;	// rtl/chisel/VDot.scala:81:50, :90:{8,20}, :113:67, :119:54, :120:{40,42}, :121:47, :123:{8,18}, :124:{10,20}, :129:{8,20}, :130:{10,22}, :143:26
+    s1Dual9_2 <=
+      _dual9_T_105
+        ? {prod4_2[7], prod4_2}
+        : _dual9_T_109
+            ? (io_in_vs2[5:4] == 2'h1
+                 ? {io_in_vs1[23], io_in_vs1[23:16]}
+                 : io_in_vs2[5:4] == 2'h2
+                     ? 9'h0 - {io_in_vs1[23], io_in_vs1[23:16]}
+                     : 9'h0)
+            : 9'h0;	// rtl/chisel/VDot.scala:81:50, :90:{8,20}, :113:67, :119:54, :120:{40,42}, :121:47, :123:{8,18}, :124:{10,20}, :129:{8,20}, :130:{10,22}, :143:26
+    s1Dual9_3 <=
+      _dual9_T_105
+        ? {prod4_3[7], prod4_3}
+        : _dual9_T_109
+            ? (io_in_vs2[7:6] == 2'h1
+                 ? {io_in_vs1[31], io_in_vs1[31:24]}
+                 : io_in_vs2[7:6] == 2'h2
+                     ? 9'h0 - {io_in_vs1[31], io_in_vs1[31:24]}
+                     : 9'h0)
+            : 9'h0;	// rtl/chisel/VDot.scala:81:50, :90:{8,20}, :113:67, :119:54, :120:{40,42}, :121:47, :123:{8,18}, :124:{10,20}, :129:{8,20}, :130:{10,22}, :143:26
+    s1Dual9_4 <=
+      _dual9_T_105
+        ? {prod4_4[7], prod4_4}
+        : _dual9_T_109
+            ? (io_in_vs2[9:8] == 2'h1
+                 ? {io_in_vs1[39], io_in_vs1[39:32]}
+                 : io_in_vs2[9:8] == 2'h2
+                     ? 9'h0 - {io_in_vs1[39], io_in_vs1[39:32]}
+                     : 9'h0)
+            : 9'h0;	// rtl/chisel/VDot.scala:81:50, :90:{8,20}, :113:67, :119:54, :120:{40,42}, :121:47, :123:{8,18}, :124:{10,20}, :129:{8,20}, :130:{10,22}, :143:26
+    s1Dual9_5 <=
+      _dual9_T_105
+        ? {prod4_5[7], prod4_5}
+        : _dual9_T_109
+            ? (io_in_vs2[11:10] == 2'h1
+                 ? {io_in_vs1[47], io_in_vs1[47:40]}
+                 : io_in_vs2[11:10] == 2'h2
+                     ? 9'h0 - {io_in_vs1[47], io_in_vs1[47:40]}
+                     : 9'h0)
+            : 9'h0;	// rtl/chisel/VDot.scala:81:50, :90:{8,20}, :113:67, :119:54, :120:{40,42}, :121:47, :123:{8,18}, :124:{10,20}, :129:{8,20}, :130:{10,22}, :143:26
+    s1Dual9_6 <=
+      _dual9_T_105
+        ? {prod4_6[7], prod4_6}
+        : _dual9_T_109
+            ? (io_in_vs2[13:12] == 2'h1
+                 ? {io_in_vs1[55], io_in_vs1[55:48]}
+                 : io_in_vs2[13:12] == 2'h2
+                     ? 9'h0 - {io_in_vs1[55], io_in_vs1[55:48]}
+                     : 9'h0)
+            : 9'h0;	// rtl/chisel/VDot.scala:81:50, :90:{8,20}, :113:67, :119:54, :120:{40,42}, :121:47, :123:{8,18}, :124:{10,20}, :129:{8,20}, :130:{10,22}, :143:26
+    s1Dual9_7 <=
+      _dual9_T_105
+        ? {prod4_7[7], prod4_7}
+        : _dual9_T_109
+            ? (io_in_vs2[15:14] == 2'h1
+                 ? {io_in_vs1[63], io_in_vs1[63:56]}
+                 : io_in_vs2[15:14] == 2'h2
+                     ? 9'h0 - {io_in_vs1[63], io_in_vs1[63:56]}
+                     : 9'h0)
+            : 9'h0;	// rtl/chisel/VDot.scala:81:50, :90:{8,20}, :113:67, :119:54, :120:{40,42}, :121:47, :123:{8,18}, :124:{10,20}, :129:{8,20}, :130:{10,22}, :143:26
+    s1Dual9_8 <=
+      _dual9_T_105
+        ? {prod4_8[7], prod4_8}
+        : _dual9_T_109
+            ? (io_in_vs2[17:16] == 2'h1
+                 ? {io_in_vs1[71], io_in_vs1[71:64]}
+                 : io_in_vs2[17:16] == 2'h2
+                     ? 9'h0 - {io_in_vs1[71], io_in_vs1[71:64]}
+                     : 9'h0)
+            : 9'h0;	// rtl/chisel/VDot.scala:81:50, :90:{8,20}, :113:67, :119:54, :120:{40,42}, :121:47, :123:{8,18}, :124:{10,20}, :129:{8,20}, :130:{10,22}, :143:26
+    s1Dual9_9 <=
+      _dual9_T_105
+        ? {prod4_9[7], prod4_9}
+        : _dual9_T_109
+            ? (io_in_vs2[19:18] == 2'h1
+                 ? {io_in_vs1[79], io_in_vs1[79:72]}
+                 : io_in_vs2[19:18] == 2'h2
+                     ? 9'h0 - {io_in_vs1[79], io_in_vs1[79:72]}
+                     : 9'h0)
+            : 9'h0;	// rtl/chisel/VDot.scala:81:50, :90:{8,20}, :113:67, :119:54, :120:{40,42}, :121:47, :123:{8,18}, :124:{10,20}, :129:{8,20}, :130:{10,22}, :143:26
+    s1Dual9_10 <=
+      _dual9_T_105
+        ? {prod4_10[7], prod4_10}
+        : _dual9_T_109
+            ? (io_in_vs2[21:20] == 2'h1
+                 ? {io_in_vs1[87], io_in_vs1[87:80]}
+                 : io_in_vs2[21:20] == 2'h2
+                     ? 9'h0 - {io_in_vs1[87], io_in_vs1[87:80]}
+                     : 9'h0)
+            : 9'h0;	// rtl/chisel/VDot.scala:81:50, :90:{8,20}, :113:67, :119:54, :120:{40,42}, :121:47, :123:{8,18}, :124:{10,20}, :129:{8,20}, :130:{10,22}, :143:26
+    s1Dual9_11 <=
+      _dual9_T_105
+        ? {prod4_11[7], prod4_11}
+        : _dual9_T_109
+            ? (io_in_vs2[23:22] == 2'h1
+                 ? {io_in_vs1[95], io_in_vs1[95:88]}
+                 : io_in_vs2[23:22] == 2'h2
+                     ? 9'h0 - {io_in_vs1[95], io_in_vs1[95:88]}
+                     : 9'h0)
+            : 9'h0;	// rtl/chisel/VDot.scala:81:50, :90:{8,20}, :113:67, :119:54, :120:{40,42}, :121:47, :123:{8,18}, :124:{10,20}, :129:{8,20}, :130:{10,22}, :143:26
+    s1Dual9_12 <=
+      _dual9_T_105
+        ? {prod4_12[7], prod4_12}
+        : _dual9_T_109
+            ? (io_in_vs2[25:24] == 2'h1
+                 ? {io_in_vs1[103], io_in_vs1[103:96]}
+                 : io_in_vs2[25:24] == 2'h2
+                     ? 9'h0 - {io_in_vs1[103], io_in_vs1[103:96]}
+                     : 9'h0)
+            : 9'h0;	// rtl/chisel/VDot.scala:81:50, :90:{8,20}, :113:67, :119:54, :120:{40,42}, :121:47, :123:{8,18}, :124:{10,20}, :129:{8,20}, :130:{10,22}, :143:26
+    s1Dual9_13 <=
+      _dual9_T_105
+        ? {prod4_13[7], prod4_13}
+        : _dual9_T_109
+            ? (io_in_vs2[27:26] == 2'h1
+                 ? {io_in_vs1[111], io_in_vs1[111:104]}
+                 : io_in_vs2[27:26] == 2'h2
+                     ? 9'h0 - {io_in_vs1[111], io_in_vs1[111:104]}
+                     : 9'h0)
+            : 9'h0;	// rtl/chisel/VDot.scala:81:50, :90:{8,20}, :113:67, :119:54, :120:{40,42}, :121:47, :123:{8,18}, :124:{10,20}, :129:{8,20}, :130:{10,22}, :143:26
+    s1Dual9_14 <=
+      _dual9_T_105
+        ? {prod4_14[7], prod4_14}
+        : _dual9_T_109
+            ? (io_in_vs2[29:28] == 2'h1
+                 ? {io_in_vs1[119], io_in_vs1[119:112]}
+                 : io_in_vs2[29:28] == 2'h2
+                     ? 9'h0 - {io_in_vs1[119], io_in_vs1[119:112]}
+                     : 9'h0)
+            : 9'h0;	// rtl/chisel/VDot.scala:81:50, :90:{8,20}, :113:67, :119:54, :120:{40,42}, :121:47, :123:{8,18}, :124:{10,20}, :129:{8,20}, :130:{10,22}, :143:26
+    s1Dual9_15 <=
+      _dual9_T_105
+        ? {prod4_15[7], prod4_15}
+        : _dual9_T_109
+            ? (io_in_vs2[31:30] == 2'h1
+                 ? {io_in_vs1[127], io_in_vs1[127:120]}
+                 : io_in_vs2[31:30] == 2'h2
+                     ? 9'h0 - {io_in_vs1[127], io_in_vs1[127:120]}
+                     : 9'h0)
+            : 9'h0;	// rtl/chisel/VDot.scala:81:50, :90:{8,20}, :113:67, :119:54, :120:{40,42}, :121:47, :123:{8,18}, :124:{10,20}, :129:{8,20}, :130:{10,22}, :143:26
+    io_out_vd_REG <=
+      s2Mode == 2'h0
+        ? {96'h0, {12{s2Sum[19]}}, s2Sum}
+        : {64'h0, {20{s2R1[11]}}, s2R1, {20{s2R0[11]}}, s2R0};	// rtl/chisel/VDot.scala:90:{13,20}, :139:26, :150:26, :154:22, :155:22, :156:22, :159:20, :160:20, :161:{22,30}, :163:28
+    outMode <= s2Mode;	// rtl/chisel/VDot.scala:150:26, :167:27
   end // always @(posedge)
-  `ifdef ENABLE_INITIAL_REG_	// rtl/chisel/VDot.scala:37:7
-    `ifdef FIRRTL_BEFORE_INITIAL	// rtl/chisel/VDot.scala:37:7
-      `FIRRTL_BEFORE_INITIAL	// rtl/chisel/VDot.scala:37:7
+  `ifdef ENABLE_INITIAL_REG_	// rtl/chisel/VDot.scala:62:7
+    `ifdef FIRRTL_BEFORE_INITIAL	// rtl/chisel/VDot.scala:62:7
+      `FIRRTL_BEFORE_INITIAL	// rtl/chisel/VDot.scala:62:7
     `endif // FIRRTL_BEFORE_INITIAL
-    initial begin	// rtl/chisel/VDot.scala:37:7
-      automatic logic [31:0] _RANDOM[0:8];	// rtl/chisel/VDot.scala:37:7
-      `ifdef INIT_RANDOM_PROLOG_	// rtl/chisel/VDot.scala:37:7
-        `INIT_RANDOM_PROLOG_	// rtl/chisel/VDot.scala:37:7
+    initial begin	// rtl/chisel/VDot.scala:62:7
+      automatic logic [31:0] _RANDOM[0:14];	// rtl/chisel/VDot.scala:62:7
+      `ifdef INIT_RANDOM_PROLOG_	// rtl/chisel/VDot.scala:62:7
+        `INIT_RANDOM_PROLOG_	// rtl/chisel/VDot.scala:62:7
       `endif // INIT_RANDOM_PROLOG_
-      `ifdef RANDOMIZE_REG_INIT	// rtl/chisel/VDot.scala:37:7
-        for (logic [3:0] i = 4'h0; i < 4'h9; i += 4'h1) begin
-          _RANDOM[i] = `RANDOM;	// rtl/chisel/VDot.scala:37:7
-        end	// rtl/chisel/VDot.scala:37:7
-        s1Illegal = _RANDOM[4'h0][0];	// rtl/chisel/VDot.scala:37:7, :85:26
-        s1Write = _RANDOM[4'h0][1];	// rtl/chisel/VDot.scala:37:7, :85:26, :86:26
-        s1Prod_0 = _RANDOM[4'h0][17:2];	// rtl/chisel/VDot.scala:37:7, :85:26, :87:26
-        s1Prod_1 = {_RANDOM[4'h0][31:18], _RANDOM[4'h1][1:0]};	// rtl/chisel/VDot.scala:37:7, :85:26, :87:26
-        s1Prod_2 = _RANDOM[4'h1][17:2];	// rtl/chisel/VDot.scala:37:7, :87:26
-        s1Prod_3 = {_RANDOM[4'h1][31:18], _RANDOM[4'h2][1:0]};	// rtl/chisel/VDot.scala:37:7, :87:26
-        s1Prod_4 = _RANDOM[4'h2][17:2];	// rtl/chisel/VDot.scala:37:7, :87:26
-        s1Prod_5 = {_RANDOM[4'h2][31:18], _RANDOM[4'h3][1:0]};	// rtl/chisel/VDot.scala:37:7, :87:26
-        s1Prod_6 = _RANDOM[4'h3][17:2];	// rtl/chisel/VDot.scala:37:7, :87:26
-        s1Prod_7 = {_RANDOM[4'h3][31:18], _RANDOM[4'h4][1:0]};	// rtl/chisel/VDot.scala:37:7, :87:26
-        s2Illegal = _RANDOM[4'h4][2];	// rtl/chisel/VDot.scala:37:7, :87:26, :92:26
-        s2Write = _RANDOM[4'h4][3];	// rtl/chisel/VDot.scala:37:7, :87:26, :93:26
-        s2Sum = _RANDOM[4'h4][23:4];	// rtl/chisel/VDot.scala:37:7, :87:26, :95:26
+      `ifdef RANDOMIZE_REG_INIT	// rtl/chisel/VDot.scala:62:7
+        for (logic [3:0] i = 4'h0; i < 4'hF; i += 4'h1) begin
+          _RANDOM[i] = `RANDOM;	// rtl/chisel/VDot.scala:62:7
+        end	// rtl/chisel/VDot.scala:62:7
+        s1Mode = _RANDOM[4'h0][1:0];	// rtl/chisel/VDot.scala:62:7, :139:26
+        s1Illegal = _RANDOM[4'h0][2];	// rtl/chisel/VDot.scala:62:7, :139:26, :140:26
+        s1Write = _RANDOM[4'h0][3];	// rtl/chisel/VDot.scala:62:7, :139:26, :141:26
+        s1Prod8_0 = _RANDOM[4'h0][19:4];	// rtl/chisel/VDot.scala:62:7, :139:26, :142:26
+        s1Prod8_1 = {_RANDOM[4'h0][31:20], _RANDOM[4'h1][3:0]};	// rtl/chisel/VDot.scala:62:7, :139:26, :142:26
+        s1Prod8_2 = _RANDOM[4'h1][19:4];	// rtl/chisel/VDot.scala:62:7, :142:26
+        s1Prod8_3 = {_RANDOM[4'h1][31:20], _RANDOM[4'h2][3:0]};	// rtl/chisel/VDot.scala:62:7, :142:26
+        s1Prod8_4 = _RANDOM[4'h2][19:4];	// rtl/chisel/VDot.scala:62:7, :142:26
+        s1Prod8_5 = {_RANDOM[4'h2][31:20], _RANDOM[4'h3][3:0]};	// rtl/chisel/VDot.scala:62:7, :142:26
+        s1Prod8_6 = _RANDOM[4'h3][19:4];	// rtl/chisel/VDot.scala:62:7, :142:26
+        s1Prod8_7 = {_RANDOM[4'h3][31:20], _RANDOM[4'h4][3:0]};	// rtl/chisel/VDot.scala:62:7, :142:26
+        s1Dual9_0 = _RANDOM[4'h4][12:4];	// rtl/chisel/VDot.scala:62:7, :142:26, :143:26
+        s1Dual9_1 = _RANDOM[4'h4][21:13];	// rtl/chisel/VDot.scala:62:7, :142:26, :143:26
+        s1Dual9_2 = _RANDOM[4'h4][30:22];	// rtl/chisel/VDot.scala:62:7, :142:26, :143:26
+        s1Dual9_3 = {_RANDOM[4'h4][31], _RANDOM[4'h5][7:0]};	// rtl/chisel/VDot.scala:62:7, :142:26, :143:26
+        s1Dual9_4 = _RANDOM[4'h5][16:8];	// rtl/chisel/VDot.scala:62:7, :143:26
+        s1Dual9_5 = _RANDOM[4'h5][25:17];	// rtl/chisel/VDot.scala:62:7, :143:26
+        s1Dual9_6 = {_RANDOM[4'h5][31:26], _RANDOM[4'h6][2:0]};	// rtl/chisel/VDot.scala:62:7, :143:26
+        s1Dual9_7 = _RANDOM[4'h6][11:3];	// rtl/chisel/VDot.scala:62:7, :143:26
+        s1Dual9_8 = _RANDOM[4'h6][20:12];	// rtl/chisel/VDot.scala:62:7, :143:26
+        s1Dual9_9 = _RANDOM[4'h6][29:21];	// rtl/chisel/VDot.scala:62:7, :143:26
+        s1Dual9_10 = {_RANDOM[4'h6][31:30], _RANDOM[4'h7][6:0]};	// rtl/chisel/VDot.scala:62:7, :143:26
+        s1Dual9_11 = _RANDOM[4'h7][15:7];	// rtl/chisel/VDot.scala:62:7, :143:26
+        s1Dual9_12 = _RANDOM[4'h7][24:16];	// rtl/chisel/VDot.scala:62:7, :143:26
+        s1Dual9_13 = {_RANDOM[4'h7][31:25], _RANDOM[4'h8][1:0]};	// rtl/chisel/VDot.scala:62:7, :143:26
+        s1Dual9_14 = _RANDOM[4'h8][10:2];	// rtl/chisel/VDot.scala:62:7, :143:26
+        s1Dual9_15 = _RANDOM[4'h8][19:11];	// rtl/chisel/VDot.scala:62:7, :143:26
+        s2Mode = _RANDOM[4'h8][21:20];	// rtl/chisel/VDot.scala:62:7, :143:26, :150:26
+        s2Illegal = _RANDOM[4'h8][22];	// rtl/chisel/VDot.scala:62:7, :143:26, :151:26
+        s2Write = _RANDOM[4'h8][23];	// rtl/chisel/VDot.scala:62:7, :143:26, :152:26
+        s2Sum = {_RANDOM[4'h8][31:24], _RANDOM[4'h9][11:0]};	// rtl/chisel/VDot.scala:62:7, :143:26, :154:22
+        s2R0 = _RANDOM[4'h9][23:12];	// rtl/chisel/VDot.scala:62:7, :154:22, :155:22
+        s2R1 = {_RANDOM[4'h9][31:24], _RANDOM[4'hA][3:0]};	// rtl/chisel/VDot.scala:62:7, :154:22, :156:22
         io_out_vd_REG =
-          {_RANDOM[4'h4][31:24],
-           _RANDOM[4'h5],
-           _RANDOM[4'h6],
-           _RANDOM[4'h7],
-           _RANDOM[4'h8][23:0]};	// rtl/chisel/VDot.scala:37:7, :87:26, :101:28
-        io_out_valid_REG = _RANDOM[4'h8][24];	// rtl/chisel/VDot.scala:37:7, :101:28, :102:28
-        io_out_illegal_REG = _RANDOM[4'h8][25];	// rtl/chisel/VDot.scala:37:7, :101:28, :103:28
-        io_out_dirty_REG = _RANDOM[4'h8][26];	// rtl/chisel/VDot.scala:37:7, :101:28, :104:28
+          {_RANDOM[4'hA][31:4],
+           _RANDOM[4'hB],
+           _RANDOM[4'hC],
+           _RANDOM[4'hD],
+           _RANDOM[4'hE][3:0]};	// rtl/chisel/VDot.scala:62:7, :156:22, :163:28
+        io_out_valid_REG = _RANDOM[4'hE][4];	// rtl/chisel/VDot.scala:62:7, :163:28, :164:28
+        io_out_illegal_REG = _RANDOM[4'hE][5];	// rtl/chisel/VDot.scala:62:7, :163:28, :165:28
+        io_out_dirty_REG = _RANDOM[4'hE][6];	// rtl/chisel/VDot.scala:62:7, :163:28, :166:28
+        outMode = _RANDOM[4'hE][8:7];	// rtl/chisel/VDot.scala:62:7, :163:28, :167:27
       `endif // RANDOMIZE_REG_INIT
     end // initial
-    `ifdef FIRRTL_AFTER_INITIAL	// rtl/chisel/VDot.scala:37:7
-      `FIRRTL_AFTER_INITIAL	// rtl/chisel/VDot.scala:37:7
+    `ifdef FIRRTL_AFTER_INITIAL	// rtl/chisel/VDot.scala:62:7
+      `FIRRTL_AFTER_INITIAL	// rtl/chisel/VDot.scala:62:7
     `endif // FIRRTL_AFTER_INITIAL
   `endif // ENABLE_INITIAL_REG_
-  assign io_out_vd = io_out_vd_REG;	// rtl/chisel/VDot.scala:37:7, :101:28
-  assign io_out_valid = io_out_valid_REG;	// rtl/chisel/VDot.scala:37:7, :102:28
-  assign io_out_illegal = io_out_illegal_REG;	// rtl/chisel/VDot.scala:37:7, :103:28
-  assign io_out_dirty = io_out_dirty_REG;	// rtl/chisel/VDot.scala:37:7, :104:28
+  assign io_out_vd = io_out_vd_REG;	// rtl/chisel/VDot.scala:62:7, :163:28
+  assign io_out_valid = io_out_valid_REG;	// rtl/chisel/VDot.scala:62:7, :164:28
+  assign io_out_illegal = io_out_illegal_REG;	// rtl/chisel/VDot.scala:62:7, :165:28
+  assign io_out_dirty = io_out_dirty_REG;	// rtl/chisel/VDot.scala:62:7, :166:28
 endmodule
 
 

@@ -207,6 +207,31 @@ python3 scripts/plot_phase1_wave.py /tmp/vadd_wave.vcd
 
 ---
 
+### 7.1 GTKWave 查看
+
+阶段一录屏中的波形画面由 GTKWave 3.3.121 实际打开 VCD 截取（本机无 GUI，使用 `Xvfb` 虚拟显示器）：
+
+```bash
+# 1) 生成波形（约 1 分钟，VCD 约 100 MB，不入库）
+build/xs-work/XiangShan/build/emu -i build/phase1/vadd.bin \
+  --dump-wave -b 8200 -e 8360 --wave-path=build/phase1/vadd_pipeline.vcd
+
+# 2) GTKWave 打开（.gtkw 含窗口尺寸与信号树，.tcl 负责加信号与标记拍）
+gtkwave docs/phase1/wave/vadd_pipeline.gtkw -S docs/phase1/wave/vadd_pipeline.tcl     # 全流水视图
+gtkwave docs/phase1/wave/vadd_writeback.gtkw -S docs/phase1/wave/vadd_writeback.tcl   # 执行/写回（十六进制）
+```
+
+| 文件 | 内容 |
+|---|---|
+| [`wave/vadd_pipeline.gtkw`](wave/vadd_pipeline.gtkw) | 9 条有效信号：ibuffer、译码、`exus_2.VialuFix` 输入/输出、StoreUnit、写回（Tcl 见 [`vadd_pipeline.tcl`](wave/vadd_pipeline.tcl)） |
+| [`wave/vadd_writeback.gtkw`](wave/vadd_writeback.gtkw) | 执行与写回 12 条信号，含 `res_data` 与 128-bit 写回数据（Tcl 见 [`vadd_writeback.tcl`](wave/vadd_writeback.tcl)） |
+| [`wave/gtkwave_vadd_pipeline.png`](wave/gtkwave_vadd_pipeline.png) | 全流水窗口截图（录屏步骤 1-7 使用） |
+| [`wave/gtkwave_vadd_writeback.png`](wave/gtkwave_vadd_writeback.png) | 执行/写回放大截图（录屏步骤 1-7 使用） |
+
+> 复现截图时需要 `gtkwave` 与 `Xvfb`；当前主机将二者解包在 `.tools/gw/` 下，运行时设置 `LD_LIBRARY_PATH`、`GSETTINGS_SCHEMA_DIR` 与 `DISPLAY` 后启动，再用 `xwd` 抓取窗口。
+
+---
+
 ## 8. 已知局限（如实记录）
 
 - 原始 VCD 约 100 MB，**不入库**（`.gitignore` 排除 `*.vcd`）；仓库保留截图（`wave/vadd_pipeline_wave.png`）与解析日志，按 §2 命令可重新生成。

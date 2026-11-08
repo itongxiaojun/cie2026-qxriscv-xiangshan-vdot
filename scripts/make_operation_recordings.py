@@ -173,6 +173,38 @@ def page(stage, idx, total, title, req, cmd, body, note="", mode="step"):
     return img
 
 
+def image_page(stage, idx, total, title, req, img_path, caption):
+    """展示真实 GTKWave 窗口截图，底部叠加说明条。"""
+    img = Image.new("RGB", (W, H), BG)
+    d = ImageDraw.Draw(img)
+    d.text((48, 20), "2026CIE  ·  qxriscv  ·  xiangshan-vdot", font=F_SMALL, fill=CYAN)
+    d.text((48, 42), title, font=F_STEP, fill=WHITE)
+    rt = f"阶段 {stage['no']} / 步骤 {idx}/{total}"
+    d.text((W - 48 - d.textlength(rt, font=F_SUB), 48), rt, font=F_SUB, fill=DIM)
+    if req:
+        d.text((W - 48 - d.textlength(f"[{req}]", font=F_CJK_SM), 76), f"[{req}]", font=F_CJK_SM, fill=CYAN)
+    d.line((48, 98, W - 48, 98), fill=(40, 54, 80), width=2)
+
+    ax0, ay0, ax1, ay1 = 36, 112, W - 36, H - 34
+    src = Image.open(os.path.join(ROOT, img_path)).convert("RGB")
+    scale = min((ax1 - ax0) / src.width, (ay1 - ay0) / src.height)
+    nw, nh = int(src.width * scale), int(src.height * scale)
+    px = ax0 + (ax1 - ax0 - nw) // 2
+    py = ay0 + (ay1 - ay0 - nh) // 2
+    img.paste(src.resize((nw, nh), Image.LANCZOS), (px, py))
+
+    # 底部说明条
+    by = py + nh - 52
+    d.rounded_rectangle((px + 6, by, px + nw - 6, py + nh - 6), radius=10, fill=(16, 24, 40))
+    label = "GTKWave 3.3.121 · 真实打开 vadd VCD"
+    d.text((px + 20, by + 15), label, font=F_CJK_SM, fill=CYAN)
+    d.text((px + 20 + d.textlength(label, font=F_CJK_SM) + 28, by + 15), caption, font=F_CJK_SM, fill=WHITE)
+
+    d.line((48, H - 26, W - 48, H - 26), fill=(40, 54, 80), width=1)
+    d.text((48, H - 22), "doc/operation_record  ·  GTKWave 窗口实录", font=F_SMALL, fill=DIM)
+    return img
+
+
 STAGES = []
 
 def add_stage(no, name, title, subtitle, steps, summary):
@@ -210,8 +242,19 @@ add_stage(
              req="官方 1.3 vadd 波形",
              cmd="grep -nE '取指|译码|发射|执行|写回|提交' docs/phase1/vadd_wave.md\nls -lh docs/phase1/wave/vadd_pipeline_wave.png",
              exec_cmd="grep -aE '^\\| (取指|译码|发射执行|访存|写回|提交)' docs/phase1/vadd_wave.md; ls -lh docs/phase1/wave/vadd_pipeline_wave.png"),
+        dict(id="1-7", slug="gtkwave", title="GTKWave 打开 vadd 波形",
+             req="官方 1.3 vadd 波形",
+             cmd=".tools/gw/root/usr/bin/gtkwave -N \\\n  docs/phase1/wave/vadd_pipeline.gtkw -S docs/phase1/wave/vadd_pipeline.tcl",
+             exec_cmd="grep -aE '^\\[dumpfile\\]|^\\[timestart\\]|^\\[timeend\\]' docs/phase1/wave/vadd_pipeline.gtkw; echo; grep -aE '^\\[dumpfile\\]|^\\[timestart\\]|^\\[timeend\\]' docs/phase1/wave/vadd_writeback.gtkw; echo; ls -lh docs/phase1/wave/gtkwave_vadd_pipeline.png docs/phase1/wave/gtkwave_vadd_writeback.png",
+             note="GTKWave 3.3.121 实际打开 VCD：上图看取指→译码→发射→访存→写回，下图放大执行与写回数据。",
+             images=[
+                 ("docs/phase1/wave/gtkwave_vadd_pipeline.png",
+                  "cycle 8240–8355：ibuffer/译码/exus2/StoreUnit/写回 valid"),
+                 ("docs/phase1/wave/gtkwave_vadd_writeback.png",
+                  "cycle 8318–8355：exus2 输出、vsext 与写回数据（十六进制）"),
+             ]),
     ],
-    ["hello：HIT GOOD TRAP，IP 192.168.0.168", "vadd 波形：cycle 8200–8360，VCD 解析与分阶段截图完成"],
+    ["hello：HIT GOOD TRAP，IP 192.168.0.168", "vadd 波形：cycle 8200–8360，VCD 解析与分阶段截图完成", "GTKWave 实录：流水有效信号与写回数据窗口"],
 )
 
 add_stage(
@@ -245,8 +288,13 @@ add_stage(
              cmd="emu -i vdot_illegal.bin --no-diff",
              exec_cmd="grep -aE 'ILLEGAL|HIT GOOD TRAP' docs/phase2/logs/xs_emu_vdot_illegal.log | tail -4",
              note="5 类非法配置全部命中 trap，other=0。"),
+        dict(id="2-7", slug="xs_patch", title="香山集成补丁与脚本",
+             req="官方 2.2 昆明湖 V2 集成",
+             cmd="bash scripts/apply_xiangshan_patch.sh check\ngit -C build/xs-work/XiangShan apply --numstat \\\n  \"$PWD/patches/xiangshan-vdot.patch\"",
+             exec_cmd="bash scripts/apply_xiangshan_patch.sh check; echo; git -C build/xs-work/XiangShan apply --numstat \"$PWD/patches/xiangshan-vdot.patch\"",
+             note="补丁 5 文件 +119/−7（新增 VDotUnit.scala）；脚本支持 check/apply/revert，已在 16ae9dd 干净工作树验证。"),
     ],
-    ["单元回归：1518/1518 PASS，3 cycle / 1.0 inst·cycle⁻¹", "香山 emu：定向 7/7、非法 5/5，difftest 0 mismatch"],
+    ["单元回归：1518/1518 PASS，3 cycle / 1.0 inst·cycle⁻¹", "香山 emu：定向 7/7、非法 5/5，difftest 0 mismatch", "香山补丁：5 文件 +119/−7，脚本可应用/回滚"],
 )
 
 add_stage(
@@ -358,6 +406,9 @@ def render_video(stage):
             body = body[:26]
         # 命令页
         add(page(stage, i, n, s["title"], s["req"], s["cmd"], [], s.get("note", "")), 1.6, f"{i:02d}_cmd")
+        # GTKWave 实景页
+        for k, (ip, cap) in enumerate(s.get("images", []), 1):
+            add(image_page(stage, i, n, s["title"], s["req"], ip, cap), 5.6, f"{i:02d}_wave{k}")
         # 输出分批
         if body:
             chunks = max(1, min(14, (len(body) + 2) // 3))
@@ -403,6 +454,9 @@ def main():
             shot2 = os.path.join(sd, "screenshots", f"{i:02d}_{s['slug']}_result.png")
             body = s["out"].splitlines()[:s.get("cap", 26)]
             page(stage, i, len(stage["steps"]), s["title"], s["req"], s["cmd"], body, s.get("note", "")).save(shot2)
+            for k, (ip, _) in enumerate(s.get("images", []), 1):
+                shutil.copyfile(os.path.join(ROOT, ip),
+                                os.path.join(sd, "screenshots", f"{i:02d}_{s['slug']}_wave{k}.png"))
             print(f"[{stage['name']}] {s['id']} {s['title']}: {len(s['out'].splitlines())} lines -> {shot2}")
         with open(os.path.join(sd, "transcript.txt"), "w", encoding="utf-8") as f:
             f.write(f"# {stage['title']}\n# 命令与输出均为本机真实执行（长耗时步骤为已捕获日志回放）\n\n")

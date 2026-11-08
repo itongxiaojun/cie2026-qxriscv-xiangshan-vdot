@@ -111,7 +111,7 @@ python3 scripts/plot_phase1_wave.py /tmp/vadd_wave.vcd
 
 | 组件 | 版本 / 提交 |
 |---|---|
-| XiangShan | `16ae9ddcda54fc9a2fddffad73174cf793ac7814`（2025-04-03，`feat(Top): make address spaces of seperate TL port configurable (#4496)`） |
+| XiangShan | `16ae9ddcda54fc9a2fddffad73174cf793ac7814`（2025-04-03，昆明湖 V2 基线快照，`feat(Top): make address spaces of seperate TL port configurable (#4496)`） |
 | 子模块 | coupledL2 `82079f4`、difftest `62e4540`、fudian `e1bd469`、huancun `90aaf59`、openLLC `614ceb4`、ready-to-run `ed8c30e`、rocket-chip `bea0af5d`、aia `9464aee`、utility `a8ca0c6`、yunsuan `cadd3c2` |
 | JDK | Temurin `21.0.13+9`（`.tools/jdk`） |
 | mill | `0.12.3`（`.tools/bin/mill`） |
@@ -119,6 +119,8 @@ python3 scripts/plot_phase1_wave.py /tmp/vadd_wave.vcd
 | RISC-V GCC | xPack `riscv-none-elf-gcc` 15.2.0 / objcopy 2.45 |
 | Verilator | `5.034 2025-02-24 rev v5.034` |
 | difftest 解释器 | `ready-to-run/riscv64-nemu-interpreter-so`（626,696 B） |
+
+> **基线口径（2026-11-05 核对）**：`16ae9dd` 的 GitHub 提交页带有 `kunminghu-v3` 分支标签，是因为它位于 V3 开发线的起点；同时它是 `kunminghu-v2` 分支的祖先提交（`compare/16ae9dd...kunminghu-v2`：behind 0 / ahead 684），且该快照源码内只有 `KunminghuV2Config`、尚无 `KunminghuV3Config`。因此本项目把它作为**昆明湖 V2 基线**：emu 按 `--config DefaultConfig` 构建（香山惯例 `DefaultConfig` 即昆明湖 V2 默认口径，未启用 `KunminghuV2Config` 的 `WithCHI`），并未启用任何 V3 配置或特性。
 
 ### 5.2 构建命令
 
@@ -175,8 +177,8 @@ make -C ./difftest emu SIM_TOP=SimTop DESIGN_DIR="$(pwd)" NUM_CORES=1 RTL_SUFFIX
 | 组件 | 版本 / 提交 |
 |---|---|
 | xs-env | `OpenXiangShan/xs-env`（XiangShan 子模块 gitlink） |
-| XiangShan | `16ae9ddcda54fc9a2fddffad73174cf793ac7814`（昆明湖 V2 基线，2025-04-03） |
-| 本地分支 | `kunminghu-v2-pin`（`fetch --depth 1` 固定，不随上游漂移） |
+| XiangShan | `16ae9ddcda54fc9a2fddffad73174cf793ac7814`（昆明湖 V2 基线快照，2025-04-03） |
+| 获取方式 | 按上述 SHA `fetch --depth 1`（HEAD 分离、无本地分支，不随上游漂移） |
 | 子模块 | coupledL2 / fudian / huancun / openLLC / ready-to-run / rocket-chip / utility / yunsuan / difftest / aia |
 | JDK | OpenJDK 21.0.13（deb 解包） |
 | mill | 0.12.17（Maven Central 自解压） |

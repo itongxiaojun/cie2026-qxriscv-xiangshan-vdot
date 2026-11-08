@@ -2,7 +2,7 @@
 # Chisel 版 RTL 等价性回归：
 #   rtl/chisel/VDotCore.sv 是 rtl/chisel/VDot.scala 经 mill + firtool 生成的 SystemVerilog，
 #   rtl/chisel/VDotWrap.v 把端口映射为与 rtl/verilog/VDot.v 相同的外部接口，
-#   复用同一测试台与同一 1518 条向量，验证两版实现功能一致。
+#   复用同一测试台与同一 3047 条三模式向量，验证两版实现功能一致。
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
