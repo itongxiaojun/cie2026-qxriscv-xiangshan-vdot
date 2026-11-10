@@ -11,6 +11,25 @@
 
 本设计走**双结果双累加流**（一条指令产出两个独立 8-lane 部分和）与 **BitNet b1.58 三值融合**（16 MAC/指令、零乘法器、权重相对 INT8 4× 压缩），且不修改既有 VFu 与调度器。
 
+## 综合结果（先看结论）
+
+Yosys 0.52 工艺无关综合（`synth -noabc; techmap`，2026-11-10 本机实跑），同一流程对三模式与 INT8 单模式各跑一遍：
+
+| 配置 | 通用单元 | 触发器 | 最长 R2R | GE 估算 |
+|---|---|---|---|---|
+| **三模式（现行）** `vdot` / `vdot4x2` / `vtdot` | **7427** | **356** | **25 级** | **≈10.1k–15.8k** |
+| INT8 单模式（对照） | 4187（历史 4186） | 172 | 25 级 | ≈5.35k–8.38k |
+| 增量 | **+3240（+77.4%）** | **+184** | **0（不变）** | ≈+89% |
+
+三条结论：
+
+1. **面积代价换吞吐**：+77% 单元换来 MAC/cycle 由 8 提升到 16（INT4/三值），并用零乘法器路径支持 BitNet b1.58；GE 口径约 +89%。
+2. **时序不受影响**：三模式与单模式最长寄存器到寄存器路径均为 **25 级**，起点 `s1_prod[1][1]`→终点 `s2_sum[15]` 完全一致。新增的 INT4/三值通路更窄（4×4 乘法、12-bit 树），没有进入关键路径。
+3. **INT4 才是最划算的**：INT8 为 512 部分积/8 MAC = 64/MAC，INT4 为 256 部分积/16 MAC = 16/MAC，单位 MAC 的乘法器面积只有 INT8 的 **1/4**。
+
+证据：[06_yosys_synth_3mode.log](docs/phase4/06_yosys_synth_3mode.log)、[05_yosys_synth_int8_recheck.log](docs/phase4/05_yosys_synth_int8_recheck.log)；完整拆解见 [release_report.md §3](docs/phase4/release_report.md)。
+口径：generic 单元数（2 输入门）与拓扑深度，**不含 µm² 与 ns**；PDK 签核未做。
+
 ## 项目状态
 
 | 阶段 | 内容 | 状态 |
@@ -18,7 +37,7 @@
 | 阶段一 | 环境部署、`hello` 输出、vadd 波形分析 | **完成**：香山 `16ae9dd`（昆明湖 V2 基线）的 emu 已构建；真实 UART 输出 `hello xiangshan, I am qxriscv, IP address: 192.168.0.168`；4 份原始日志 + vadd 波形（含 GTKWave 窗口截图）与逐 cycle 分析已入库（[env.md](docs/phase1/env.md)、[vadd_wave.md](docs/phase1/vadd_wave.md)） |
 | 阶段二 | 设计文档、RTL、正/负/边界测试 | **完成（三模式）**：3047/3047 PASS，行覆盖率 55/55 = 100%；Chisel 版生成 RTL，同向量等价回归 3047/3047；香山 emu 内 INT8 定向 7/7、非法 5/5 |
 | 阶段三 | NEMU 扩展、协同仿真、基线对比与加速分析 | **完成（三模式）**：3032 用例 / 4551 结果字 / 0 fail，三模式 boundary 全 PASS；单元级 3 cycle / 1.0 inst/cycle，MAC/cycle = 8:16:16；**香山 emu 实测加速比 9.8×（对标量，8-lane 公平）/ 11.8×（对 RVV 基线，16-lane，属上界）**（INT8，NITER=2000） |
-| 阶段四 | RTL 收口、综合评估、加速模型与提交 | **收口完成**：严格 lint 0 告警；generic 综合 4186 单元 / 172 FF / 最长路径 25 级（≈5.3k–8.4k GE，**INT8 单模式历史值**）；三模式 Scala 编译 PASS；PDK 签核与三模式综合待实施 |
+| 阶段四 | RTL 收口、综合评估、加速模型与提交 | **收口完成**：严格 lint 0 告警；generic 综合**三模式 7427 单元 / 356 FF / 最长路径 25 级**（≈10.1k–15.8k GE；INT8 单模式对照 4187 / 172 / 25），关键路径不变；三模式 Scala 编译 PASS；PDK 签核待实施 |
 
 ### 已完成并验证（模块级 RTL 仿真 + NEMU 协同仿真 + 香山 emu 系统级）
 
