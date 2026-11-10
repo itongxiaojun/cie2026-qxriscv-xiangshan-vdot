@@ -2,9 +2,10 @@
 
 > 项目：2026CIE · qxriscv · xiangshan-vdot
 > 对应进度表 T4.1–T4.4；所有数字均来自 `docs/phase4/` 下日志，可复现。
-> 口径声明：面积/逻辑深度为 **generic 工艺无关综合**，且是 **仅 INT8 单模式** 的历史结果（三模式版未综合），不是 PDK 签核结果；延迟/吞吐的 4.0×/6.0× 为 **结构模型推演**。**实测加速比另有出处**：香山昆明湖 V2 `emu` 整程序 cycleCnt（9.8× 对标量，8-lane 公平 / 11.8× 对 RVV，16-lane，属上界，NITER=2000），见 §5.3 与 `docs/phase3/perf_analysis.md` §6。
+> 口径声明：面积/逻辑深度为 **generic 工艺无关综合**（三模式 7427 单元 / 356 FF / 25 级，INT8 单模式对照 4187 / 172 / 25），不是 PDK 签核结果；延迟/吞吐的 4.0×/6.0× 为 **结构模型推演**。**实测加速比另有出处**：香山昆明湖 V2 `emu` 整程序 cycleCnt（9.8× 对标量，8-lane 公平 / 11.8× 对 RVV，16-lane，属上界，NITER=2000），见 §5.3 与 `docs/phase3/perf_analysis.md` §6。
 >
-> **三模式更新（2026-11-08）**：RTL 已扩展为 `vdot.vv` / `vdot4x2.vv` / `vtdot.vv`（BitNet b1.58 三值），单元回归 **3047/3047**、覆盖率 **55/55**、NEMU 协同 **3032 用例 / 4551 字 / 0 fail**、Chisel 等价 **3047/3047**。§3 的 4186 单元/172 FF/25 级仍是 **INT8 单模式历史值**，不代表三模式面积。
+> **三模式更新（2026-11-08）**：RTL 已扩展为 `vdot.vv` / `vdot4x2.vv` / `vtdot.vv`（BitNet b1.58 三值），单元回归 **3047/3047**、覆盖率 **55/55**、NEMU 协同 **3032 用例 / 4551 字 / 0 fail**、Chisel 等价 **3047/3047**。
+> **综合更新（2026-11-10）**：本机已装 yosys 0.52 并对三模式 RTL 实跑，§3 现为 **7427 单元 / 356 FF / 25 级**；INT8 单模式复核为 4187 单元 / 172 FF / 25 级（历史 4186）。
 
 ---
 
@@ -14,7 +15,7 @@
 |---|---|---|
 | 清除 RTL 中的死逻辑，消除严格 lint 告警 | Verilator `--lint-only -Wall` + 人工复核 | 告警 4 → 0（仅 1 处语义性豁免，见 §2.3） |
 | 证明清理未改变功能 | 全量单元回归 + NEMU/RTL 协同仿真 + 基线复跑 | 3047/3047（三模式）、NEMU 3032 用例/4551 字 0 mismatch |
-| 取得面积与逻辑深度量级 | yosys 0.52 generic 综合（`synth -noabc; techmap`） | **INT8 单模式历史值**：4186 单元 / 172 FF / 最长 R2R 25 级；三模式面积待综合 |
+| 取得面积与逻辑深度量级 | yosys 0.52 generic 综合（`synth -noabc; techmap`） | **三模式 7427 单元 / 356 FF / 25 级**；INT8 单模式对照 4187 单元 / 172 FF / 25 级 |
 | 给出可辩护的"有/无该指令"差异 | 指令数实测 + 依赖链/吞吐结构模型 + 香山 emu 整程序实测 | 数据通路 6→1；模型延迟 12→3 cycle；实测加速比 9.8×（8-lane 公平）/11.8×（16-lane 上界） |
 
 **不在范围**：PDK 映射后的面积（µm²）、时序签核（ns/GHz）。原因见 §7。香山平台实测周期与加速比已于 2026-11-03 完成（§5.3）。
@@ -50,48 +51,54 @@
 
 ---
 
-## 3. 综合评估（generic，INT8 单模式历史值）
+## 3. 综合评估（generic，三模式 + INT8 对照）
 
-> **边界**：本节综合对象是 2026-10 的单模式 `VDot.v`（仅 INT8）。三模式版新增了 16 个 `4×4` 乘法器、16 个三值选择器与两棵 12-bit 归约树，面积必然更大；在本机无 yosys 的情况下不得把本节数字当作三模式面积对外引用。
+> **口径**：2026-11-10 已在本机装好 yosys 0.52 并对**三模式 `VDot.v`** 实跑综合：**7427 单元 / 356 FF / 最长 R2R 25 级**。同一流程对 v1.2 单模式 RTL 复核得 4187 单元（历史值 4186，差 1 个 `$_OR_`，属等价），工具链口径可信。
 
-- 工具：Yosys 0.52（Debian 包本地解包运行，未安装、未改系统）
-- **当前环境（2026-11-01 迁移后）未安装 yosys**：本节数据来自历史日志 `01_yosys_synth.log`，可审阅但**不可在本机复跑**；复跑需先提供 yosys 0.52+。
-- 流程：`read_verilog -sv` → `synth -top VDot -noabc` → `techmap` → `opt` → `ltp -noff` → `stat`
-- 说明：`abc` 二进制缺失，故以 `techmap/simplemap` 映射到 2 输入通用门；结果比 ABC 优化后保守。
+- 工具：Yosys 0.52-2（Debian trixie `yosys` + `yosys-abc` deb 包**解包到 `.tools/yosys`**，未安装到系统、未改系统环境；`.tools/` 已被 gitignore）
+- 运行方式：`PATH=.tools/yosys/usr/bin:$PATH YOSYS_DATDIR=.tools/yosys/usr/share/yosys`
+- 流程：`read_verilog -sv` → `synth -top VDot -noabc` → `techmap` → `opt` → `splitnets -ports` → `opt` → `ltp -noff` → `stat`
+- 说明：使用 `-noabc`，映射到 2 输入通用门；结果比 ABC 优化后保守，可作三模式之间的横向对比，不作 µm²。
 
 ### 3.1 规模
 
-| 项 | 数量 |
-|---|---|
-| 通用单元总数 | **4186** |
-| `$_AND_` | 1929 |
-| `$_XOR_` | 1362 |
-| `$_OR_` | 655 |
-| `$_NOT_` | 68 |
-| `$_SDFF_PP0_`（同步复位 FF） | **172** |
+| 单元 | **三模式（现行）** | INT8 单模式（复核） | 增量 |
+|---|---|---|---|
+| `$_AND_` | 2954 | 1929 | +1025 |
+| `$_XOR_` | 2315 | 1362 | +953 |
+| `$_OR_` | 1054 | 656 | +398 |
+| `$_MUX_` | 576 | 0 | +576 |
+| `$_NOT_` | 172 | 68 | +104 |
+| `$_SDFF_PP0_` | **356** | 172 | +184 |
+| **合计** | **7427** | 4187 | **+3240（+77.4%）** |
+
+增量来源与结构完全对得上：16 个 `4×4` 乘法器（约 +380 XOR / +部分 AND）、16 条三值 lane 的 9-bit 取反与选择（约 +300 XOR、+576 MUX 的主要部分）、两棵 12-bit 归约树（14 个 12-bit 加法器）、`s1_dual9`(144 bit) 与 `s2_r0/r1`(24 bit) 等新增流水寄存器（FF 172→356）。
 
 ### 3.2 面积估算（GE 口径）
 
-GE 权重按常用 2 输入 NAND 等效口径给出区间（低/高）：
+GE 权重沿用 §3 历史口径（2 输入 NAND 等效，低/高）：
 
-| 单元 | 数量 | 低权重 | 高权重 | 低 GE | 高 GE |
+| 单元 | 三模式数量 | 低权重 | 高权重 | 低 GE | 高 GE |
 |---|---|---|---|---|---|
-| AND2 | 1929 | 1.0 | 1.5 | 1929 | 2893.5 |
-| OR2 | 655 | 1.0 | 1.5 | 655 | 982.5 |
-| XOR2 | 1362 | 1.5 | 2.5 | 2043 | 3405 |
-| INV | 68 | 0.5 | 1.0 | 34 | 68 |
-| SDFF | 172 | 4.0 | 6.0 | 688 | 1032 |
-| **合计** | 4186 | — | — | **≈5.35k** | **≈8.38k** |
+| AND2 | 2954 | 1.0 | 1.5 | 2954 | 4431 |
+| OR2 | 1054 | 1.0 | 1.5 | 1054 | 1581 |
+| XOR2 | 2315 | 1.5 | 2.5 | 3472.5 | 5787.5 |
+| MUX2 | 576 | 2.0 | 3.0 | 1152 | 1728 |
+| INV | 172 | 0.5 | 1.0 | 86 | 172 |
+| SDFF | 356 | 4.0 | 6.0 | 1424 | 2136 |
+| **合计** | 7427 | — | — | **≈10.1k** | **≈15.8k** |
 
-即 **约 5.3k–8.4k GE（中值 ≈6.9k）**。数量级与结构相符：8 个有符号 8×8 乘法器 + 7 个 20 bit 加法器 + 172 bit 流水寄存器。
+即三模式 **约 10.1k–15.8k GE（中值 ≈12.9k）**；INT8 单模式为 5.35k–8.38k GE（中值 ≈6.9k）。**相对单模式约 +89%**（单元数 +77%，GE 更高是因为新增 MUX 与 XOR 权重较大）。
 
-FF 结构上限为 187 bit（`s1_prod` 128 + 控制 4 + `s2_sum` 20 + 输出 32 + 状态 3），综合后 172 bit，差值来自常量折叠与等价寄存器合并。
+按 MAC 折算更说明问题：三模式单周期 8/16/16 MAC，若只看"每 MAC 的乘法器面积"，INT8 为 512 部分积/8 MAC = 64/MAC，INT4 为 256 部分积/16 MAC = 16/MAC，即 **INT4 的单位 MAC 乘法器面积只有 INT8 的 1/4**。
 
 ### 3.3 逻辑深度
 
-`ltp -noff` 报 **最长寄存器到寄存器路径 25 级**，起点为 `s1_prod[1][1]`、经 `maccmap` 全加器压缩树到达 `s2_sum`，即 **EX2 加法树是时序关键级**，而非 EX1 乘法。
+`ltp -noff` 对三模式报 **最长寄存器到寄存器路径 25 级**，起点 `s1_prod8[1][1]`、终点 `s2_sum8[15]`，与单模式（`s1_prod[1][1]`→`s2_sum[15]`）**同深度、同终点**。
 
-> 该深度是 generic 门级拓扑长度，**不是 ns**；真实深度需 PDK 库 + DC/Genus 才能给出。25 级对 20 bit、8 操作数归约属于正常范围（3 层加法器经压缩树折叠）。
+即：**新增的 INT4/三值路径没有进入关键路径**。原因是它们更窄（4×4 乘法、12-bit 树），深度小于 INT8 的 20-bit 树，因此插入后不拉长 R2R。WB 端新增的 128-bit 输出 MUX 只影响写回口本身的组合延迟，不影响寄存器间最坏路径。
+
+> 该深度是 generic 门级拓扑长度，**不是 ns**；真实面积/时序需 PDK 库 + DC/Genus（B4 仍部分关闭）。
 
 ---
 
@@ -166,7 +173,7 @@ FF 结构上限为 187 bit（`s1_prod` 128 + 控制 4 + `s2_sum` 20 + 输出 32 
 |---|---|---|---|
 | RTL 代码 | 含死逻辑 | 已清理；并扩展为 INT8/INT4/三值三模式 | lint 门禁 + 差异化路线 |
 | 功能/协同仿真 | 1518 / 1513 / 0 mismatch | 3047 / 3032 用例 / 4551 字 / 0 mismatch | 三模式扩展 |
-| 综合数据 | 无 | 4186 单元 / 172 FF / 25 级（**INT8 单模式**） | 新增 yosys 评估；三模式未综合 |
+| 综合数据 | 无 | 三模式 7427 单元 / 356 FF / 25 级（INT8 单模式 4187 / 172 / 25） | 已装 yosys 0.52 完成三模式综合 |
 | 加速结论 | 指令数比 6:1 | 补 4.0× 延迟模型、6.0× 吞吐模型；系统级实测 9.8×（lane 公平）/11.8×（16-lane 上界） | 补答辩所需口径 |
 | 向量吞吐 | 8 MAC/cycle | 8 / 16 / 16（INT8/INT4/三值） | 差异化创新 |
 
@@ -179,8 +186,8 @@ FF 结构上限为 187 bit（`s1_prod` 128 + 控制 4 + `s2_sum` 20 + 输出 32 
 | B1 | `xs-env` + RISC-V 工具链 | **已关闭（2026-11-01）**：`.tools/` 手工等价部署 + 香山 `16ae9dd` 的 emu 已构建，阶段一 hello/vadd 波形已入库 |
 | B2 | 香山内集成与回归 | **已关闭（2026-11-03）**：I1–I7 完成，RTL 重生成 + emu 重建；定向 7/7 difftest 0 mismatch、非法 5/5 |
 | B3 | 平台真实加速比 | **已关闭（2026-11-03）**：emu 实测 9.8×（对标量，8-lane 公平）/ 11.8×（对 RVV，16-lane，属上界），NITER=2000，见 `docs/phase3/perf_analysis.md` §6 |
-| B4 | PDK 面积与时序签核 | **部分关闭**：generic 规模/深度已取得（INT8 单模式）；µm² 与 ns 仍需 PDK 库与 DC/Genus |
-| B5 | 三模式综合面积 | **未关闭**：本机无 yosys；需在有 yosys 的环境对三模式 `VDot.v` 复跑 `synth -noabc; techmap; stat` |
+| B4 | PDK 面积与时序签核 | **部分关闭**：generic 规模/深度已取得（三模式 7427 单元 / 356 FF / 25 级）；µm² 与 ns 仍需 PDK 库与 DC/Genus |
+| B5 | 三模式综合面积 | **已关闭（2026-11-10）**：`docs/phase4/06_yosys_synth_3mode.log`，7427 单元 / 356 FF / 25 级；INT8 对照见 `05_yosys_synth_int8_recheck.log` |
 | B6 | INT4/三值的系统级 emu | **未关闭**：三模式 Scala 已编译 PASS，单元 + NEMU + Chisel 已闭环；emu 全量重建后可补跑 |
 
 > 表述口径（2026-11-03 更新）：B2/B3 关闭后，可以宣称"`vdot` 已在香山昆明湖 V2 的 `emu`（Verilator）+ difftest 环境验证，并取得实测加速比 9.8×（lane 公平）/11.8×（16-lane 上界）"。仍不得宣称：PDK 级面积/时序（B4 未关闭）、真实频率下的绝对性能、FPGA/流片结果。
@@ -191,7 +198,9 @@ FF 结构上限为 187 bit（`s1_prod` 128 + 控制 4 + `s2_sum` 20 + 输出 32 
 
 | 文件 | 内容 |
 |---|---|
-| `docs/phase4/01_yosys_synth.log` | generic 综合全过程、单元统计、最长路径 |
+| `docs/phase4/06_yosys_synth_3mode.log` | **三模式**综合全过程、单元统计、最长路径 |
+| `docs/phase4/05_yosys_synth_int8_recheck.log` | INT8 单模式复核（4187 单元，校验工具链口径） |
+| `docs/phase4/01_yosys_synth.log` | 历史单模式综合日志（4186 单元，保留存档） |
 | `docs/phase4/02_verilator_lint.log` | 严格 lint 结果（0 告警） |
 | `docs/phase4/03_rtl_full_perf.log` | 3047 条全量回归与延迟/吞吐 |
 | `docs/phase4/04_nemu_cosim_after_clean.log` | NEMU 自测 + RTL↔NEMU diff（清理后，INT8 1513 条） |
@@ -216,8 +225,9 @@ python3 tests/run_nemu_cosim.py --rtl-export /tmp/rtl_export.txt --out /tmp/cosi
 # 4) 基线等价性
 python3 tests/run_nemu_baseline.py
 
-# 5) generic 综合（需 yosys；本环境为 deb 本地解包，见 §3）
-yosys -p "read_verilog -sv rtl/verilog/VDot.v; synth -top VDot -noabc; techmap; opt; ltp -noff; stat"
+# 5) generic 综合（已装 .tools/yosys，见 §3）
+export PATH="$PWD/.tools/yosys/usr/bin:$PATH" YOSYS_DATDIR="$PWD/.tools/yosys/usr/share/yosys"
+yosys -p "read_verilog -sv rtl/verilog/VDot.v; synth -top VDot -noabc; techmap; opt; splitnets -ports; opt; ltp -noff; stat"
 ```
 
 ---
@@ -235,8 +245,8 @@ yosys -p "read_verilog -sv rtl/verilog/VDot.v; synth -top VDot -noabc; techmap; 
 | RVV 组合基线（INT8） | **可复跑，PASS** | 1513/1513，`alu_op_ratio 6.0x` |
 | 一键回归 | **可复跑，PASS** | `bash scripts/run_all.sh` → `ALL : PASS` |
 | 香山 Scala 编译（三模式） | **可复跑，PASS** | `mill -i xiangshan.compile`，573 任务 0 error |
-| generic 综合（§3） | **不可复跑** | 当前环境无 yosys；数据引用历史日志 `01_yosys_synth.log`（INT8 单模式） |
-| 三模式综合面积（B5） | **不可复跑** | 需 yosys；未取得 |
+| generic 综合（§3） | **可复跑** | 本机 `.tools/yosys`（0.52-2 deb 解包），见 §3 命令 |
+| 三模式综合面积（B5） | **已关闭** | `06_yosys_synth_3mode.log`：7427 单元 / 356 FF / 25 级 |
 | 香山平台实测（§7 B2–B3） | **INT8 已闭环（2026-11-03）** | 定向 7/7、非法 5/5、四内核 9.8×/11.8×；INT4/三值 emu 待重跑（B6） |
 
 迁移暴露并已修复的缺陷：`build/obj_dir` 内的旧 Makefile 写死旧工作区绝对路径，导致 `make` 报"没有规则可制作目标"；`scripts/build_sim.sh` 已增加陈旧构建目录自动清理（路径不符即重建）。

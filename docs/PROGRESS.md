@@ -26,7 +26,7 @@
 | M2 | vdot 指令族 RTL + 单元验证 | TR3 | D10 | **完成** | 100%（三模式 3047/3047 PASS；行覆盖率 55/55 = 100%；Chisel 版编译并生成 RTL，同向量等价回归 3047/3047） |
 | M3 | 香山内集成 + 汇编级正/负/边界测试 | TR4 | D12 | **完成** | 100%（`vdot` 接入 VFEX0；定向 7/7 difftest 0 mismatch，非法 5/5；见 `docs/phase2/logs/xs_emu_*.log`） |
 | M4 | NEMU 扩展 + 协同仿真 | TR4 | D15 | **完成** | 100%（三模式 3032 用例 / 4551 结果字 / 0 mismatch；三模式 boundary 全 PASS） |
-| M5 | 基线与加速比 + 提交 | TR6/ADCP | D20 | 进行中 | 95%（基线与协同仿真全绿；**香山 emu 实测加速比 9.8×（对标量，8-lane 公平）/11.8×（对 RVV，16-lane，属上界）已完成**；generic 综合为历史日志、当前无 yosys 不可复跑；仅剩提交动作待批准） |
+| M5 | 基线与加速比 + 提交 | TR6/ADCP | D20 | 进行中 | 97%（基线与协同仿真全绿；**香山 emu 实测加速比 9.8×（对标量，8-lane 公平）/11.8×（对 RVV，16-lane，属上界）已完成**；三模式 generic 综合已取得（7427 单元 / 356 FF / 25 级）；仅剩提交动作待批准） |
 
 ## 2. 官方交付要求对照
 
@@ -69,8 +69,8 @@
 | T3.12 | 香山三模式 Scala 编译与补丁重生成 | `patches/xiangshan-vdot.patch` | 完成 | T3.8 / T2.7 | `mill -i xiangshan.compile`：573 任务 0 error（28 s）；补丁 5 文件 +157/−7；emu 重跑列为 B6 |
 | T3.9 | 阶段一（环境/hello/vadd 波形） | 日志 + 波形 + 文档 | 完成 | xs-env | `docs/phase1/logs/01–04`、`wave/vadd_pipeline_wave.png`、`vadd_wave.md`；emu 构建 EXIT=0 |
 | T4.1 | RTL 死逻辑清理与严格 lint 门禁 | `VDot.v` 修订 | 完成 | T2.2 | `02_verilator_lint.log`：4 告警 → **0** |
-| T4.2 | generic 综合与逻辑深度评估 | 综合日志 | 完成（INT8 单模式历史） | T4.1 | `01_yosys_synth.log`：4186 单元 / 172 FF / 最长路径 25 级；三模式面积待综合 |
-| T4.3 | 面积估算（GE 口径） | 估算表 | 完成 | T4.2 | `release_report.md` §3.2：≈5.3k–8.4k GE |
+| T4.2 | generic 综合与逻辑深度评估 | 综合日志 | 完成（三模式） | T4.1 | `06_yosys_synth_3mode.log`：7427 单元 / 356 FF / 最长路径 25 级；INT8 对照 `05_yosys_synth_int8_recheck.log`：4187 / 172 / 25 |
+| T4.3 | 面积估算（GE 口径） | 估算表 | 完成 | T4.2 | `release_report.md` §3.2：三模式 ≈10.1k–15.8k GE（INT8 单模式 5.35k–8.38k） |
 | T4.4 | 加速模型（延迟/吞吐）与答辩口径 | 模型表 | 完成 | T4.1 | `release_report.md` §5：4.0× 延迟 / 6.0× 吞吐（模型） |
 | T4.5 | 清理后全量回归（单元/协同/基线） | 回归日志 | 完成 | T4.1 | 3047/3047；NEMU 3032 用例 / 4551 字，0 mismatch；基线 6.0× |
 | T4.6 | 一键回归脚本（单元+lint+Chisel 等价+协同+基线） | `scripts/run_all.sh` | 完成 | T4.5 | 本机 `ALL : PASS`（7 步全绿） |
@@ -84,8 +84,8 @@
 | B1 | 阶段一全部内容 | — | — | **已关闭（2026-11-01）**：emu 构建、hello 运行、vadd 波形与四份日志均已入库（见 §2 的 1.1–1.3 证据） |
 | B2 | 香山内集成与回归 | — | — | **已关闭（2026-11-03）**：I1–I7 完成，RTL 重生成 + emu 重建；定向 7/7 difftest 0 mismatch、非法 5/5；见 `docs/phase2/logs/xs_emu_*.log` |
 | B3 | 真实加速比 | — | — | **已关闭（2026-11-03）**：emu 实测 9.8×（对标量，8-lane 公平）/ 11.8×（对 RVV，16-lane，属上界），见 `perf_analysis.md` §6 |
-| B4 | PDK 面积/时序签核 | 工艺库 + DC/Genus | 环境允许 | **部分关闭**：generic 规模/深度已取得（`docs/phase4/01_yosys_synth.log`，INT8 单模式）；µm² 与 ns 仍待做 |
-| B5 | 三模式综合面积 | yosys 环境 + 三模式 `VDot.v` | 有 yosys | 复跑 `synth -noabc; techmap; stat`，替换 `release_report.md` §3 的单模式口径 |
+| B4 | PDK 面积/时序签核 | 工艺库 + DC/Genus | 环境允许 | **部分关闭**：generic 规模/深度已取得（三模式 7427 单元 / 356 FF / 25 级）；µm² 与 ns 仍待做 |
+| B5 | 三模式综合面积 | yosys 环境 + 三模式 `VDot.v` | 有 yosys | **已关闭（2026-11-10）**：`.tools/yosys`（0.52-2）实跑，7427 单元 / 356 FF / 25 级，见 `docs/phase4/06_yosys_synth_3mode.log` |
 | B6 | INT4/三值系统级 emu | emu 全量重建（约 75 min） | 有余量机器时间 | 复用 `tests/phase2/xs_emu/*.S` 增加三条指令用例并跑 difftest |
 
 > **表述口径（2026-11-08 更新）**：三模式（INT8/INT4/三值）的**单元级 + NEMU + Chisel** 证据已闭环；系统级 emu 仍只有 INT8 实测。可以宣称"`vdot` 指令族在模块级与 NEMU 协同层完成三模式验证，INT8 在香山 emu + difftest 环境取得实测加速比 9.8×（lane 公平）/11.8×（16-lane 上界）"。不得把 INT4/三值的单元级数字外推为整程序实测，也不得宣称 PDK 级面积/时序（B4 未关闭）、真实频率绝对性能与 FPGA/流片结果。
@@ -125,6 +125,16 @@
 | `bash scripts/run_chisel_equiv.sh` | **PASS** | Chisel 6.6.0 编译 + firtool 1.62.1 生成 `VDotCore.sv`；同一测试台 1518/1518、3 cycle、1.0 inst/cycle |
 | `bash scripts/run_all.sh`（7 步） | **ALL : PASS** | 单元 → 严格 lint → Chisel 等价 → NEMU 自测 → RTL↔NEMU → 基线全绿 |
 
+### 历史复跑记录（2026-11-10，三模式综合）
+
+本机装好 yosys 0.52-2（Debian deb 解包到 `.tools/yosys`，不改系统）后，关闭 B5：
+
+| 步骤 | 结果 | 说明 |
+|---|---|---|
+| 三模式综合 `rtl/verilog/VDot.v` | **PASS** | **7427 单元 / 356 FF / 最长 R2R 25 级**；`docs/phase4/06_yosys_synth_3mode.log` |
+| INT8 单模式复核（`20aab6e` 版 RTL） | **PASS** | 4187 单元 / 172 FF / 25 级，与历史 4186 一致；`docs/phase4/05_yosys_synth_int8_recheck.log` |
+| 增量归因 | 确认 | +3240 单元（+77.4%）、+184 FF；关键路径深度与终点不变（仍为 EX2 的 INT8 20-bit 树） |
+
 ### 历史复跑记录（2026-11-01）
 
 工作区迁移后，在 `/home/dbqxxs/xsriscv/cieriscv` 重新执行全链路，用于确认"文档结论仍成立"：
@@ -140,7 +150,7 @@
 | RVV 组合基线 | **PASS** | 1513/1513，`alu_op_ratio 6.0x` |
 | `bash scripts/run_all.sh` | **ALL : PASS** | 6 步全绿 |
 
-本次复跑同时修复了一个环境迁移缺陷：`build/obj_dir` 中的旧 Makefile 写死旧工作区绝对路径，导致构建失败；已在 `scripts/build_sim.sh` 增加"陈旧构建目录自动清理"。本次**未能复跑** generic 综合（当前环境无 yosys），综合数据仍引用 `docs/phase4/01_yosys_synth.log` 历史证据。
+本次复跑同时修复了一个环境迁移缺陷：`build/obj_dir` 中的旧 Makefile 写死旧工作区绝对路径，导致构建失败；已在 `scripts/build_sim.sh` 增加"陈旧构建目录自动清理"。本次**未能复跑** generic 综合（当时环境无 yosys），综合数据引用 `docs/phase4/01_yosys_synth.log` 历史证据；该项已于 2026-11-10 关闭（见上一条复跑记录）。
 
 阶段一在三阶段复跑之外单独执行：`.tools/` 手工等价部署工具链 → 构建香山 `16ae9dd` 的 emu（约 54 min，`EXIT=0`）→ 跑 hello（Host 74,084 ms）→ 跑 vadd 并 dump 波形（Host 42,404 ms）→ `scripts/plot_phase1_wave.py` 出图。原始日志见 `docs/phase1/logs/`，波形分析见 `docs/phase1/vadd_wave.md`。
 
@@ -152,7 +162,8 @@
 | 2026-11-06 | 阶段二新增 2-7「香山集成补丁与脚本」步骤（`apply_xiangshan_patch.sh check` + 补丁 numstat），步骤增至 26 个、截图 54 张；四阶段全部生成中文解说字幕版（`*_narrated.mp4` + `.srt`，AAC 音轨、硬字幕落底部黑边），统一由 `scripts/make_stage_narration.py` 生成；提交包视频位换为四段解说版并移除原版，索引见 `doc/operation_record/README.md` |
 | 2026-11-04 | 操作留痕产物入库：新增 `doc/operation_record/`，按官方 1.1/1.2/1.3、2.1/2.2/2.3、3.1.1/3.1.2/3.2/3.3 拆为 25 个步骤，生成 50 张命令/结果截图 + 2 张 GTKWave 波形实景、4 段 MP4 录屏（1920×1080@30fps）与各阶段 `transcript.txt`；长耗时步骤回放已捕获日志并在画面标注；阶段一 1-7 用 GTKWave 打开 vadd VCD 并在录屏展示；索引见 `doc/operation_record/README.md`，`ipd/04` 视频提交行改为指向该索引 |
 | 2026-11-04 | 性能数据 3 次重复测量（G5 关闭）：四个内核各独立跑 3 次（NITER=2000），cycleCnt 中位数 empty 11,108 / vdot 12,123 / rvv 23,109 / scalar 21,022，极差全为 0（0.00%，判据 <5%），12/12 次 `PERF result=OK` 且 `HIT GOOD TRAP`；新增 `docs/phase3/05_perf_repeat.log`，同步 `ipd/04` 勾选与 `perf_analysis.md` §6.1/§6.3 重复测量表；新增阶段三最终总结报告 `docs/phase3/final_report.md` |
-| 2026-11-03 | 阶段三一致性审计与迭代：`patches/nemu-vdot.patch` 按当前 NEMU 工作树重新生成（+44→+42 行，修正已在源码中规避的 `return` 缺陷）；`tests/run_nemu_cosim.py` 新增 NEMU 边界自检（`vl=0` 不写回 + vm=0/e16/e64/m2 四类非法各触发 1 次 `EX_II`），`mini_asm` 增加 CSR/`mret`/`la` 支持；`tests/phase2/xs_emu/build.sh` 固定 `PERF_NITER=2000`（此前重建会退化为 20000）；修正 `perf_analysis.md` 中 RVV 退休指令 3→2、标量 IPC 3.2→3.4、RVV 慢 17%→21% 等口径；新增 §6.4 公平性口径（RVV 内核 VLMAX=16，属 2× lane 工作量，11.8× 仅为上界，主结论用 lane 公平的 9.8×），并同步 README/PROGRESS/release_report/design/PR/ipd/PPT；刷新 `docs/phase3/{00,01,02,03,04}` 与 `nemu_standalone_perf_*.log` |
+| 2026-11-10 | 关闭 B5：本机安装 yosys 0.52-2（`yosys` + `yosys-abc` deb 包解包到 `.tools/yosys`，不写系统目录），对三模式 `VDot.v` 实跑 generic 综合得 **7427 单元 / 356 FF / 最长 R2R 25 级**，并复核 INT8 单模式为 4187 单元 / 172 FF / 25 级（历史 4186，差 1 个 OR 属等价）；新增 `docs/phase4/06_yosys_synth_3mode.log`、`05_yosys_synth_int8_recheck.log`；`release_report.md` §3 重写为三模式口径（含 +3240 单元/+77.4%、≈10.1k–15.8k GE、关键路径不变），README 环境表与综合行、PROGRESS T4.2/T4.3/M5/B4 同步 |
+| 2026-11-09 | 三模式与 BitNet 融合全系列同步并推送 GitHub（`7c5adeb`，101 文件 +19358/−7151）：`design.md` 新增 §3.7–§3.9（量化前端边界、1.58-bit 打包密度取舍、理念映射矩阵），`vdot4x2.vv`/`vtdot.vv` RTL、Chisel、NEMU、香山译码与 `VDotUnit` 全链路同步；提交材料 PDF 与 zip 按 v1.3 重生成 |
 | 2026-11-03 | 香山内集成闭环（T3.8/T3.10/T3.11，关闭 B2/B3）：`vdot` 接入 VFEX0 并在昆明湖 V2 上重生成 RTL、重建 emu；修复两个集成缺陷（D-07 `vl==0` 屏蔽写回导致架构 vd 变随机值；D-08 `VlData` 仅 8 bit 使 SEW/LMUL/vill 检查被优化掉）；定向 7/7 difftest 0 mismatch、非法 5/5、性能四内核全绿；实测加速比 9.8×（对标量，8-lane 公平）/11.8×（对 RVV 基线，16-lane，属上界）；新增 `docs/phase2/logs/xs_emu_*.log`、`tests/phase2/xs_emu/{vdot_directed,vdot_illegal,vdot_perf}.S`、`build.sh`、`run_emu.sh`；`test_report.md` §7/§8/§10、`perf_analysis.md` §6、`patches/xiangshan-vdot-integration.md` §5/§8/§10 同步 |
 | 2026-11-02 | 阶段二收口（T2.4–T2.6）：修复 `in_sew` 2 bit 截断保留编码缺陷（改 3 bit，新增 TC-E05）；测试台新增复位空闲、逐 lane 8/8、`vstart` 重放 3/3 自检，`total_cycles` 更新为 10220；接入 Verilator 行覆盖率（36/36 = 100%）；Chisel 版编译通过并生成 `rtl/chisel/VDotCore.sv`，经 `VDotWrap.v` 完成 1518/1518 等价回归；新增 `scripts/run_chisel_equiv.sh`，`scripts/run_all.sh` 扩为 7 步；`design.md`/`test_report.md` 升至 v1.2，README/`ipd/04`/集成说明/`env.md` 同步 Chisel 状态 |
 | 2026-11-01 | 阶段一闭环（T3.9 / M1）：`.tools/` 手工等价部署（Temurin 21.0.13、mill 0.12.3、xPack GCC 15.2.0、Verilator 5.034），构建香山 `16ae9dd` 的 emu（`EXIT=0`，约 54 min）；hello 输出 `hello xiangshan, I am qxriscv, IP address: 192.168.0.168`，vadd 波形（8200–8360）采集并出图；新增 `docs/phase1/logs/01–04`、`docs/phase1/wave/vadd_pipeline_wave.png`、`docs/phase1/vadd_wave.md`、`scripts/plot_phase1_wave.py`；`docs/phase1/env.md` 重写为"当前可用环境 + 旧机历史"；1.1–1.3 与 T3.9 标完成，B1 关闭 |

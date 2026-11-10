@@ -1,0 +1,1518 @@
+# VDot 三模式综合评估（vdot / vdot4x2 / vtdot，yosys 0.52，generic 工艺无关映射）
+# 运行日期：2026-11-10
+# 工具：yosys 0.52-2（Debian trixie deb 包解包到 .tools/yosys，未安装到系统、未改系统环境）
+# 命令: PATH=.tools/yosys/usr/bin:$PATH YOSYS_DATDIR=.tools/yosys/usr/share/yosys \
+#       yosys -p "read_verilog -sv rtl/verilog/VDot.v; synth -top VDot -noabc; techmap; opt; splitnets -ports; opt; ltp -noff; stat"
+# 结果：7427 单元 / 356 FF / 最长 R2R 25 级（与 INT8 单模式同深度）
+# 对照：05_yosys_synth_int8_recheck.log 为同一流程对 v1.2 单模式 RTL 的复核（4187 单元，与历史 4186 一致）
+
+ /----------------------------------------------------------------------------\
+ |  yosys -- Yosys Open SYnthesis Suite                                       |
+ |  Copyright (C) 2012 - 2025  Claire Xenia Wolf <claire@yosyshq.com>         |
+ |  Distributed under an ISC-like license, type "license" to see terms        |
+ \----------------------------------------------------------------------------/
+ Yosys 0.52 (git sha1 fee39a3284c90249e1d9684cf6944ffbbcbb8f90)
+
+-- Running command `read_verilog -sv rtl/verilog/VDot.v; synth -top VDot -noabc; techmap; opt; splitnets -ports; opt; ltp -noff; stat' --
+
+1. Executing Verilog-2005 frontend: rtl/verilog/VDot.v
+Parsing SystemVerilog input from `rtl/verilog/VDot.v' to AST representation.
+Warning: Encountered `translate_off' comment! Such legacy hot comments are supported by Yosys, but are not part of any formal language specification. Using a portable and standards-compliant construct such as `ifdef is recommended!
+Generating RTLIL representation for module `\VDot'.
+Warning: Replacing memory \d1 with list of registers. See rtl/verilog/VDot.v:229
+Warning: Replacing memory \d0 with list of registers. See rtl/verilog/VDot.v:228
+Warning: Replacing memory \u0 with list of registers. See rtl/verilog/VDot.v:202
+Warning: Replacing memory \dual9 with list of registers. See rtl/verilog/VDot.v:163
+Warning: Replacing memory \tern9 with list of registers. See rtl/verilog/VDot.v:150
+Warning: Replacing memory \act9 with list of registers. See rtl/verilog/VDot.v:149
+Warning: Replacing memory \tcode with list of registers. See rtl/verilog/VDot.v:148
+Warning: Replacing memory \act8 with list of registers. See rtl/verilog/VDot.v:147
+Warning: Replacing memory \prod4 with list of registers. See rtl/verilog/VDot.v:131
+Warning: Replacing memory \b4 with list of registers. See rtl/verilog/VDot.v:130
+Warning: Replacing memory \a4 with list of registers. See rtl/verilog/VDot.v:129
+Warning: Replacing memory \prod8 with list of registers. See rtl/verilog/VDot.v:114
+Warning: Replacing memory \b8 with list of registers. See rtl/verilog/VDot.v:113
+Warning: Replacing memory \a8 with list of registers. See rtl/verilog/VDot.v:112
+Warning: Replacing memory \s1_dual9 with list of registers. See rtl/verilog/VDot.v:185
+Warning: Replacing memory \s1_prod8 with list of registers. See rtl/verilog/VDot.v:184
+Successfully finished Verilog frontend.
+
+2. Executing SYNTH pass.
+
+2.1. Executing HIERARCHY pass (managing design hierarchy).
+
+2.1.1. Analyzing design hierarchy..
+Top module:  \VDot
+
+2.1.2. Analyzing design hierarchy..
+Top module:  \VDot
+Removed 0 unused modules.
+
+2.2. Executing PROC pass (convert processes to netlists).
+
+2.2.1. Executing PROC_CLEAN pass (remove empty switches from decision trees).
+Found and cleaned up 5 empty switches in `\VDot.$proc$rtl/verilog/VDot.v:0$222'.
+Removing empty process `VDot.$proc$rtl/verilog/VDot.v:0$222'.
+Cleaned up 5 empty switches.
+
+2.2.2. Executing PROC_RMDEAD pass (remove dead branches from decision trees).
+Marked 1 switch rules as full_case in process $proc$rtl/verilog/VDot.v:304$52 in module VDot.
+Marked 1 switch rules as full_case in process $proc$rtl/verilog/VDot.v:0$51 in module VDot.
+Marked 1 switch rules as full_case in process $proc$rtl/verilog/VDot.v:264$50 in module VDot.
+Marked 1 switch rules as full_case in process $proc$rtl/verilog/VDot.v:179$15 in module VDot.
+Removed a total of 0 dead cases.
+
+2.2.3. Executing PROC_PRUNE pass (remove redundant assignments in processes).
+Removed 38 redundant assignments.
+Promoted 181 assignments to connections.
+
+2.2.4. Executing PROC_INIT pass (extract init attributes).
+
+2.2.5. Executing PROC_ARST pass (detect async resets in processes).
+
+2.2.6. Executing PROC_ROM pass (convert switches to ROMs).
+Converted 0 switches.
+<suppressed ~4 debug messages>
+
+2.2.7. Executing PROC_MUX pass (convert decision trees to multiplexers).
+Creating decoders for process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+Creating decoders for process `\VDot.$proc$rtl/verilog/VDot.v:304$52'.
+     1/5: $0\out_dirty[0:0]
+     2/5: $0\out_illegal[0:0]
+     3/5: $0\out_valid[0:0]
+     4/5: $0\out_mode[1:0]
+     5/5: $0\out_vd[127:0]
+Creating decoders for process `\VDot.$proc$rtl/verilog/VDot.v:0$51'.
+     1/1: $1\vd_c[127:0]
+Creating decoders for process `\VDot.$proc$rtl/verilog/VDot.v:264$50'.
+     1/6: $0\s2_r1[11:0]
+     2/6: $0\s2_r0[11:0]
+     3/6: $0\s2_sum8[19:0]
+     4/6: $0\s2_write[0:0]
+     5/6: $0\s2_illegal[0:0]
+     6/6: $0\s2_mode[1:0]
+Creating decoders for process `\VDot.$proc$rtl/verilog/VDot.v:179$15'.
+     1/31: $1$fordecl_block$3.j[31:0]$21
+     2/31: $0\s1_dual9[15][8:0]
+     3/31: $0\s1_dual9[14][8:0]
+     4/31: $0\s1_dual9[13][8:0]
+     5/31: $0\s1_dual9[12][8:0]
+     6/31: $0\s1_dual9[11][8:0]
+     7/31: $0\s1_dual9[10][8:0]
+     8/31: $0\s1_dual9[9][8:0]
+     9/31: $0\s1_dual9[8][8:0]
+    10/31: $0\s1_dual9[7][8:0]
+    11/31: $0\s1_dual9[6][8:0]
+    12/31: $0\s1_dual9[5][8:0]
+    13/31: $0\s1_dual9[4][8:0]
+    14/31: $0\s1_dual9[3][8:0]
+    15/31: $0\s1_dual9[2][8:0]
+    16/31: $0\s1_dual9[1][8:0]
+    17/31: $0\s1_dual9[0][8:0]
+    18/31: $1$fordecl_block$1.j[31:0]$20
+    19/31: $0\s1_prod8[7][15:0]
+    20/31: $0\s1_prod8[6][15:0]
+    21/31: $0\s1_prod8[5][15:0]
+    22/31: $0\s1_prod8[4][15:0]
+    23/31: $0\s1_prod8[3][15:0]
+    24/31: $0\s1_prod8[2][15:0]
+    25/31: $0\s1_prod8[1][15:0]
+    26/31: $0\s1_prod8[0][15:0]
+    27/31: $0\s1_write[0:0]
+    28/31: $0\s1_illegal[0:0]
+    29/31: $0\s1_mode[1:0]
+    30/31: $1$fordecl_block$7.j[31:0]$23
+    31/31: $1$fordecl_block$5.j[31:0]$22
+
+2.2.8. Executing PROC_DLATCH pass (convert process syncs to latches).
+No latch inferred for signal `\VDot.\a8[0]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\a8[1]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\a8[2]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\a8[3]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\a8[4]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\a8[5]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\a8[6]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\a8[7]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\b8[0]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\b8[1]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\b8[2]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\b8[3]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\b8[4]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\b8[5]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\b8[6]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\b8[7]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\prod8[0]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\prod8[1]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\prod8[2]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\prod8[3]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\prod8[4]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\prod8[5]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\prod8[6]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\prod8[7]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\a4[0]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\a4[1]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\a4[2]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\a4[3]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\a4[4]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\a4[5]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\a4[6]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\a4[7]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\a4[8]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\a4[9]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\a4[10]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\a4[11]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\a4[12]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\a4[13]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\a4[14]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\a4[15]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\b4[0]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\b4[1]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\b4[2]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\b4[3]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\b4[4]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\b4[5]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\b4[6]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\b4[7]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\b4[8]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\b4[9]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\b4[10]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\b4[11]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\b4[12]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\b4[13]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\b4[14]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\b4[15]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\prod4[0]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\prod4[1]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\prod4[2]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\prod4[3]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\prod4[4]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\prod4[5]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\prod4[6]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\prod4[7]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\prod4[8]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\prod4[9]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\prod4[10]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\prod4[11]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\prod4[12]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\prod4[13]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\prod4[14]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\prod4[15]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\act8[0]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\act8[1]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\act8[2]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\act8[3]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\act8[4]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\act8[5]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\act8[6]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\act8[7]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\act8[8]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\act8[9]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\act8[10]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\act8[11]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\act8[12]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\act8[13]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\act8[14]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\act8[15]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\tcode[0]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\tcode[1]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\tcode[2]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\tcode[3]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\tcode[4]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\tcode[5]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\tcode[6]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\tcode[7]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\tcode[8]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\tcode[9]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\tcode[10]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\tcode[11]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\tcode[12]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\tcode[13]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\tcode[14]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\tcode[15]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\act9[0]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\act9[1]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\act9[2]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\act9[3]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\act9[4]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\act9[5]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\act9[6]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\act9[7]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\act9[8]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\act9[9]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\act9[10]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\act9[11]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\act9[12]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\act9[13]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\act9[14]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\act9[15]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\tern9[0]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\tern9[1]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\tern9[2]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\tern9[3]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\tern9[4]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\tern9[5]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\tern9[6]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\tern9[7]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\tern9[8]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\tern9[9]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\tern9[10]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\tern9[11]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\tern9[12]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\tern9[13]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\tern9[14]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\tern9[15]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\dual9[0]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\dual9[1]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\dual9[2]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\dual9[3]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\dual9[4]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\dual9[5]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\dual9[6]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\dual9[7]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\dual9[8]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\dual9[9]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\dual9[10]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\dual9[11]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\dual9[12]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\dual9[13]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\dual9[14]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\dual9[15]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\u0[0]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\u0[1]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\u0[2]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\u0[3]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\u0[4]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\u0[5]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\u0[6]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\u0[7]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\d0[0]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\d0[1]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\d0[2]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\d0[3]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\d0[4]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\d0[5]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\d0[6]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\d0[7]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\d1[0]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\d1[1]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\d1[2]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\d1[3]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\d1[4]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\d1[5]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\d1[6]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\d1[7]' from process `\VDot.$proc$rtl/verilog/VDot.v:0$53'.
+No latch inferred for signal `\VDot.\vd_c' from process `\VDot.$proc$rtl/verilog/VDot.v:0$51'.
+
+2.2.9. Executing PROC_DFF pass (convert process syncs to FFs).
+Creating register for signal `\VDot.\out_vd' using process `\VDot.$proc$rtl/verilog/VDot.v:304$52'.
+  created $dff cell `$procdff$353' with positive edge clock.
+Creating register for signal `\VDot.\out_valid' using process `\VDot.$proc$rtl/verilog/VDot.v:304$52'.
+  created $dff cell `$procdff$354' with positive edge clock.
+Creating register for signal `\VDot.\out_illegal' using process `\VDot.$proc$rtl/verilog/VDot.v:304$52'.
+  created $dff cell `$procdff$355' with positive edge clock.
+Creating register for signal `\VDot.\out_dirty' using process `\VDot.$proc$rtl/verilog/VDot.v:304$52'.
+  created $dff cell `$procdff$356' with positive edge clock.
+Creating register for signal `\VDot.\out_mode' using process `\VDot.$proc$rtl/verilog/VDot.v:304$52'.
+  created $dff cell `$procdff$357' with positive edge clock.
+Creating register for signal `\VDot.\s2_mode' using process `\VDot.$proc$rtl/verilog/VDot.v:264$50'.
+  created $dff cell `$procdff$358' with positive edge clock.
+Creating register for signal `\VDot.\s2_illegal' using process `\VDot.$proc$rtl/verilog/VDot.v:264$50'.
+  created $dff cell `$procdff$359' with positive edge clock.
+Creating register for signal `\VDot.\s2_write' using process `\VDot.$proc$rtl/verilog/VDot.v:264$50'.
+  created $dff cell `$procdff$360' with positive edge clock.
+Creating register for signal `\VDot.\s2_sum8' using process `\VDot.$proc$rtl/verilog/VDot.v:264$50'.
+  created $dff cell `$procdff$361' with positive edge clock.
+Creating register for signal `\VDot.\s2_r0' using process `\VDot.$proc$rtl/verilog/VDot.v:264$50'.
+  created $dff cell `$procdff$362' with positive edge clock.
+Creating register for signal `\VDot.\s2_r1' using process `\VDot.$proc$rtl/verilog/VDot.v:264$50'.
+  created $dff cell `$procdff$363' with positive edge clock.
+Creating register for signal `\VDot.\s1_mode' using process `\VDot.$proc$rtl/verilog/VDot.v:179$15'.
+  created $dff cell `$procdff$364' with positive edge clock.
+Creating register for signal `\VDot.\s1_illegal' using process `\VDot.$proc$rtl/verilog/VDot.v:179$15'.
+  created $dff cell `$procdff$365' with positive edge clock.
+Creating register for signal `\VDot.\s1_write' using process `\VDot.$proc$rtl/verilog/VDot.v:179$15'.
+  created $dff cell `$procdff$366' with positive edge clock.
+Creating register for signal `\VDot.$fordecl_block$1.j' using process `\VDot.$proc$rtl/verilog/VDot.v:179$15'.
+  created $dff cell `$procdff$367' with positive edge clock.
+Creating register for signal `\VDot.$fordecl_block$3.j' using process `\VDot.$proc$rtl/verilog/VDot.v:179$15'.
+  created $dff cell `$procdff$368' with positive edge clock.
+Creating register for signal `\VDot.$fordecl_block$5.j' using process `\VDot.$proc$rtl/verilog/VDot.v:179$15'.
+  created $dff cell `$procdff$369' with positive edge clock.
+Creating register for signal `\VDot.$fordecl_block$7.j' using process `\VDot.$proc$rtl/verilog/VDot.v:179$15'.
+  created $dff cell `$procdff$370' with positive edge clock.
+Creating register for signal `\VDot.\s1_prod8[0]' using process `\VDot.$proc$rtl/verilog/VDot.v:179$15'.
+  created $dff cell `$procdff$371' with positive edge clock.
+Creating register for signal `\VDot.\s1_prod8[1]' using process `\VDot.$proc$rtl/verilog/VDot.v:179$15'.
+  created $dff cell `$procdff$372' with positive edge clock.
+Creating register for signal `\VDot.\s1_prod8[2]' using process `\VDot.$proc$rtl/verilog/VDot.v:179$15'.
+  created $dff cell `$procdff$373' with positive edge clock.
+Creating register for signal `\VDot.\s1_prod8[3]' using process `\VDot.$proc$rtl/verilog/VDot.v:179$15'.
+  created $dff cell `$procdff$374' with positive edge clock.
+Creating register for signal `\VDot.\s1_prod8[4]' using process `\VDot.$proc$rtl/verilog/VDot.v:179$15'.
+  created $dff cell `$procdff$375' with positive edge clock.
+Creating register for signal `\VDot.\s1_prod8[5]' using process `\VDot.$proc$rtl/verilog/VDot.v:179$15'.
+  created $dff cell `$procdff$376' with positive edge clock.
+Creating register for signal `\VDot.\s1_prod8[6]' using process `\VDot.$proc$rtl/verilog/VDot.v:179$15'.
+  created $dff cell `$procdff$377' with positive edge clock.
+Creating register for signal `\VDot.\s1_prod8[7]' using process `\VDot.$proc$rtl/verilog/VDot.v:179$15'.
+  created $dff cell `$procdff$378' with positive edge clock.
+Creating register for signal `\VDot.\s1_dual9[0]' using process `\VDot.$proc$rtl/verilog/VDot.v:179$15'.
+  created $dff cell `$procdff$379' with positive edge clock.
+Creating register for signal `\VDot.\s1_dual9[1]' using process `\VDot.$proc$rtl/verilog/VDot.v:179$15'.
+  created $dff cell `$procdff$380' with positive edge clock.
+Creating register for signal `\VDot.\s1_dual9[2]' using process `\VDot.$proc$rtl/verilog/VDot.v:179$15'.
+  created $dff cell `$procdff$381' with positive edge clock.
+Creating register for signal `\VDot.\s1_dual9[3]' using process `\VDot.$proc$rtl/verilog/VDot.v:179$15'.
+  created $dff cell `$procdff$382' with positive edge clock.
+Creating register for signal `\VDot.\s1_dual9[4]' using process `\VDot.$proc$rtl/verilog/VDot.v:179$15'.
+  created $dff cell `$procdff$383' with positive edge clock.
+Creating register for signal `\VDot.\s1_dual9[5]' using process `\VDot.$proc$rtl/verilog/VDot.v:179$15'.
+  created $dff cell `$procdff$384' with positive edge clock.
+Creating register for signal `\VDot.\s1_dual9[6]' using process `\VDot.$proc$rtl/verilog/VDot.v:179$15'.
+  created $dff cell `$procdff$385' with positive edge clock.
+Creating register for signal `\VDot.\s1_dual9[7]' using process `\VDot.$proc$rtl/verilog/VDot.v:179$15'.
+  created $dff cell `$procdff$386' with positive edge clock.
+Creating register for signal `\VDot.\s1_dual9[8]' using process `\VDot.$proc$rtl/verilog/VDot.v:179$15'.
+  created $dff cell `$procdff$387' with positive edge clock.
+Creating register for signal `\VDot.\s1_dual9[9]' using process `\VDot.$proc$rtl/verilog/VDot.v:179$15'.
+  created $dff cell `$procdff$388' with positive edge clock.
+Creating register for signal `\VDot.\s1_dual9[10]' using process `\VDot.$proc$rtl/verilog/VDot.v:179$15'.
+  created $dff cell `$procdff$389' with positive edge clock.
+Creating register for signal `\VDot.\s1_dual9[11]' using process `\VDot.$proc$rtl/verilog/VDot.v:179$15'.
+  created $dff cell `$procdff$390' with positive edge clock.
+Creating register for signal `\VDot.\s1_dual9[12]' using process `\VDot.$proc$rtl/verilog/VDot.v:179$15'.
+  created $dff cell `$procdff$391' with positive edge clock.
+Creating register for signal `\VDot.\s1_dual9[13]' using process `\VDot.$proc$rtl/verilog/VDot.v:179$15'.
+  created $dff cell `$procdff$392' with positive edge clock.
+Creating register for signal `\VDot.\s1_dual9[14]' using process `\VDot.$proc$rtl/verilog/VDot.v:179$15'.
+  created $dff cell `$procdff$393' with positive edge clock.
+Creating register for signal `\VDot.\s1_dual9[15]' using process `\VDot.$proc$rtl/verilog/VDot.v:179$15'.
+  created $dff cell `$procdff$394' with positive edge clock.
+
+2.2.10. Executing PROC_MEMWR pass (convert process memory writes to cells).
+
+2.2.11. Executing PROC_CLEAN pass (remove empty switches from decision trees).
+Removing empty process `VDot.$proc$rtl/verilog/VDot.v:0$53'.
+Found and cleaned up 1 empty switch in `\VDot.$proc$rtl/verilog/VDot.v:304$52'.
+Removing empty process `VDot.$proc$rtl/verilog/VDot.v:304$52'.
+Found and cleaned up 1 empty switch in `\VDot.$proc$rtl/verilog/VDot.v:0$51'.
+Removing empty process `VDot.$proc$rtl/verilog/VDot.v:0$51'.
+Found and cleaned up 1 empty switch in `\VDot.$proc$rtl/verilog/VDot.v:264$50'.
+Removing empty process `VDot.$proc$rtl/verilog/VDot.v:264$50'.
+Found and cleaned up 1 empty switch in `\VDot.$proc$rtl/verilog/VDot.v:179$15'.
+Removing empty process `VDot.$proc$rtl/verilog/VDot.v:179$15'.
+Cleaned up 4 empty switches.
+
+2.2.12. Executing OPT_EXPR pass (perform const folding).
+Optimizing module VDot.
+<suppressed ~3 debug messages>
+
+2.3. Executing OPT_EXPR pass (perform const folding).
+Optimizing module VDot.
+
+2.4. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \VDot..
+Removed 10 unused cells and 355 unused wires.
+<suppressed ~12 debug messages>
+
+2.5. Executing CHECK pass (checking for obvious problems).
+Checking module VDot...
+Found and reported 0 problems.
+
+2.6. Executing OPT pass (performing simple optimizations).
+
+2.6.1. Executing OPT_EXPR pass (perform const folding).
+Optimizing module VDot.
+
+2.6.2. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\VDot'.
+<suppressed ~90 debug messages>
+Removed a total of 30 cells.
+
+2.6.3. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module \VDot..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Removed 0 multiplexer ports.
+<suppressed ~37 debug messages>
+
+2.6.4. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module \VDot.
+Performed a total of 0 changes.
+
+2.6.5. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\VDot'.
+<suppressed ~6 debug messages>
+Removed a total of 2 cells.
+
+2.6.6. Executing OPT_DFF pass (perform DFF optimizations).
+
+2.6.7. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \VDot..
+Removed 0 unused cells and 31 unused wires.
+<suppressed ~1 debug messages>
+
+2.6.8. Executing OPT_EXPR pass (perform const folding).
+Optimizing module VDot.
+
+2.6.9. Rerunning OPT passes. (Maybe there is more to do..)
+
+2.6.10. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module \VDot..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Removed 0 multiplexer ports.
+<suppressed ~36 debug messages>
+
+2.6.11. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module \VDot.
+Performed a total of 0 changes.
+
+2.6.12. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\VDot'.
+Removed a total of 0 cells.
+
+2.6.13. Executing OPT_DFF pass (perform DFF optimizations).
+
+2.6.14. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \VDot..
+
+2.6.15. Executing OPT_EXPR pass (perform const folding).
+Optimizing module VDot.
+
+2.6.16. Finished OPT passes. (There is nothing left to do.)
+
+2.7. Executing FSM pass (extract and optimize FSM).
+
+2.7.1. Executing FSM_DETECT pass (finding FSMs in design).
+
+2.7.2. Executing FSM_EXTRACT pass (extracting FSM from design).
+
+2.7.3. Executing FSM_OPT pass (simple optimizations of FSMs).
+
+2.7.4. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \VDot..
+
+2.7.5. Executing FSM_OPT pass (simple optimizations of FSMs).
+
+2.7.6. Executing FSM_RECODE pass (re-assigning FSM state encoding).
+
+2.7.7. Executing FSM_INFO pass (dumping all available information on FSM cells).
+
+2.7.8. Executing FSM_MAP pass (mapping FSMs to basic logic).
+
+2.8. Executing OPT pass (performing simple optimizations).
+
+2.8.1. Executing OPT_EXPR pass (perform const folding).
+Optimizing module VDot.
+
+2.8.2. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\VDot'.
+Removed a total of 0 cells.
+
+2.8.3. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module \VDot..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Removed 0 multiplexer ports.
+<suppressed ~36 debug messages>
+
+2.8.4. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module \VDot.
+Performed a total of 0 changes.
+
+2.8.5. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\VDot'.
+Removed a total of 0 cells.
+
+2.8.6. Executing OPT_DFF pass (perform DFF optimizations).
+Adding SRST signal on $procdff$394 ($dff) from module VDot (D = \dual9[15], Q = \s1_dual9[15], rval = 9'000000000).
+Adding SRST signal on $procdff$393 ($dff) from module VDot (D = \dual9[14], Q = \s1_dual9[14], rval = 9'000000000).
+Adding SRST signal on $procdff$392 ($dff) from module VDot (D = \dual9[13], Q = \s1_dual9[13], rval = 9'000000000).
+Adding SRST signal on $procdff$391 ($dff) from module VDot (D = \dual9[12], Q = \s1_dual9[12], rval = 9'000000000).
+Adding SRST signal on $procdff$390 ($dff) from module VDot (D = \dual9[11], Q = \s1_dual9[11], rval = 9'000000000).
+Adding SRST signal on $procdff$389 ($dff) from module VDot (D = \dual9[10], Q = \s1_dual9[10], rval = 9'000000000).
+Adding SRST signal on $procdff$388 ($dff) from module VDot (D = \dual9[9], Q = \s1_dual9[9], rval = 9'000000000).
+Adding SRST signal on $procdff$387 ($dff) from module VDot (D = \dual9[8], Q = \s1_dual9[8], rval = 9'000000000).
+Adding SRST signal on $procdff$386 ($dff) from module VDot (D = \dual9[7], Q = \s1_dual9[7], rval = 9'000000000).
+Adding SRST signal on $procdff$385 ($dff) from module VDot (D = \dual9[6], Q = \s1_dual9[6], rval = 9'000000000).
+Adding SRST signal on $procdff$384 ($dff) from module VDot (D = \dual9[5], Q = \s1_dual9[5], rval = 9'000000000).
+Adding SRST signal on $procdff$383 ($dff) from module VDot (D = \dual9[4], Q = \s1_dual9[4], rval = 9'000000000).
+Adding SRST signal on $procdff$382 ($dff) from module VDot (D = \dual9[3], Q = \s1_dual9[3], rval = 9'000000000).
+Adding SRST signal on $procdff$381 ($dff) from module VDot (D = \dual9[2], Q = \s1_dual9[2], rval = 9'000000000).
+Adding SRST signal on $procdff$380 ($dff) from module VDot (D = \dual9[1], Q = \s1_dual9[1], rval = 9'000000000).
+Adding SRST signal on $procdff$379 ($dff) from module VDot (D = \dual9[0], Q = \s1_dual9[0], rval = 9'000000000).
+Adding SRST signal on $procdff$378 ($dff) from module VDot (D = \prod8[7], Q = \s1_prod8[7], rval = 16'0000000000000000).
+Adding SRST signal on $procdff$377 ($dff) from module VDot (D = \prod8[6], Q = \s1_prod8[6], rval = 16'0000000000000000).
+Adding SRST signal on $procdff$376 ($dff) from module VDot (D = \prod8[5], Q = \s1_prod8[5], rval = 16'0000000000000000).
+Adding SRST signal on $procdff$375 ($dff) from module VDot (D = \prod8[4], Q = \s1_prod8[4], rval = 16'0000000000000000).
+Adding SRST signal on $procdff$374 ($dff) from module VDot (D = \prod8[3], Q = \s1_prod8[3], rval = 16'0000000000000000).
+Adding SRST signal on $procdff$373 ($dff) from module VDot (D = \prod8[2], Q = \s1_prod8[2], rval = 16'0000000000000000).
+Adding SRST signal on $procdff$372 ($dff) from module VDot (D = \prod8[1], Q = \s1_prod8[1], rval = 16'0000000000000000).
+Adding SRST signal on $procdff$371 ($dff) from module VDot (D = \prod8[0], Q = \s1_prod8[0], rval = 16'0000000000000000).
+Adding SRST signal on $procdff$366 ($dff) from module VDot (D = $logic_and$rtl/verilog/VDot.v:189$28_Y, Q = \s1_write, rval = 1'0).
+Adding SRST signal on $procdff$365 ($dff) from module VDot (D = $logic_and$rtl/verilog/VDot.v:188$25_Y, Q = \s1_illegal, rval = 1'0).
+Adding SRST signal on $procdff$364 ($dff) from module VDot (D = \in_mode, Q = \s1_mode, rval = 2'00).
+Adding SRST signal on $procdff$363 ($dff) from module VDot (D = \r1_sum, Q = \s2_r1, rval = 12'000000000000).
+Adding SRST signal on $procdff$362 ($dff) from module VDot (D = \r0_sum, Q = \s2_r0, rval = 12'000000000000).
+Adding SRST signal on $procdff$361 ($dff) from module VDot (D = \sum8, Q = \s2_sum8, rval = 20'00000000000000000000).
+Adding SRST signal on $procdff$360 ($dff) from module VDot (D = \s1_write, Q = \s2_write, rval = 1'0).
+Adding SRST signal on $procdff$359 ($dff) from module VDot (D = \s1_illegal, Q = \s2_illegal, rval = 1'0).
+Adding SRST signal on $procdff$358 ($dff) from module VDot (D = \s1_mode, Q = \s2_mode, rval = 2'00).
+Adding SRST signal on $procdff$355 ($dff) from module VDot (D = \s2_illegal, Q = \out_illegal, rval = 1'0).
+Adding SRST signal on $procdff$354 ($dff) from module VDot (D = \s2_write, Q = \out_valid, rval = 1'0).
+Adding SRST signal on $procdff$353 ($dff) from module VDot (D = \vd_c, Q = \out_vd, rval = 128'00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000).
+
+2.8.7. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \VDot..
+Removed 36 unused cells and 36 unused wires.
+<suppressed ~37 debug messages>
+
+2.8.8. Executing OPT_EXPR pass (perform const folding).
+Optimizing module VDot.
+
+2.8.9. Rerunning OPT passes. (Maybe there is more to do..)
+
+2.8.10. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module \VDot..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Removed 0 multiplexer ports.
+<suppressed ~17 debug messages>
+
+2.8.11. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module \VDot.
+Performed a total of 0 changes.
+
+2.8.12. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\VDot'.
+Removed a total of 0 cells.
+
+2.8.13. Executing OPT_DFF pass (perform DFF optimizations).
+
+2.8.14. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \VDot..
+
+2.8.15. Executing OPT_EXPR pass (perform const folding).
+Optimizing module VDot.
+
+2.8.16. Finished OPT passes. (There is nothing left to do.)
+
+2.9. Executing WREDUCE pass (reducing word size of cells).
+Converting cell VDot.$add$rtl/verilog/VDot.v:210$29 ($add) from unsigned to signed.
+Removed top 4 bits (of 20) from port A of cell VDot.$add$rtl/verilog/VDot.v:210$29 ($add).
+Removed top 4 bits (of 20) from port B of cell VDot.$add$rtl/verilog/VDot.v:210$29 ($add).
+Removed top 3 bits (of 20) from port Y of cell VDot.$add$rtl/verilog/VDot.v:210$29 ($add).
+Converting cell VDot.$add$rtl/verilog/VDot.v:211$30 ($add) from unsigned to signed.
+Removed top 4 bits (of 20) from port A of cell VDot.$add$rtl/verilog/VDot.v:211$30 ($add).
+Removed top 4 bits (of 20) from port B of cell VDot.$add$rtl/verilog/VDot.v:211$30 ($add).
+Removed top 3 bits (of 20) from port Y of cell VDot.$add$rtl/verilog/VDot.v:211$30 ($add).
+Converting cell VDot.$add$rtl/verilog/VDot.v:212$31 ($add) from unsigned to signed.
+Removed top 4 bits (of 20) from port A of cell VDot.$add$rtl/verilog/VDot.v:212$31 ($add).
+Removed top 4 bits (of 20) from port B of cell VDot.$add$rtl/verilog/VDot.v:212$31 ($add).
+Removed top 3 bits (of 20) from port Y of cell VDot.$add$rtl/verilog/VDot.v:212$31 ($add).
+Converting cell VDot.$add$rtl/verilog/VDot.v:213$32 ($add) from unsigned to signed.
+Removed top 4 bits (of 20) from port A of cell VDot.$add$rtl/verilog/VDot.v:213$32 ($add).
+Removed top 4 bits (of 20) from port B of cell VDot.$add$rtl/verilog/VDot.v:213$32 ($add).
+Removed top 3 bits (of 20) from port Y of cell VDot.$add$rtl/verilog/VDot.v:213$32 ($add).
+Converting cell VDot.$add$rtl/verilog/VDot.v:214$33 ($add) from unsigned to signed.
+Removed top 3 bits (of 20) from port A of cell VDot.$add$rtl/verilog/VDot.v:214$33 ($add).
+Removed top 3 bits (of 20) from port B of cell VDot.$add$rtl/verilog/VDot.v:214$33 ($add).
+Removed top 2 bits (of 20) from port Y of cell VDot.$add$rtl/verilog/VDot.v:214$33 ($add).
+Converting cell VDot.$add$rtl/verilog/VDot.v:215$34 ($add) from unsigned to signed.
+Removed top 3 bits (of 20) from port A of cell VDot.$add$rtl/verilog/VDot.v:215$34 ($add).
+Removed top 3 bits (of 20) from port B of cell VDot.$add$rtl/verilog/VDot.v:215$34 ($add).
+Removed top 2 bits (of 20) from port Y of cell VDot.$add$rtl/verilog/VDot.v:215$34 ($add).
+Converting cell VDot.$add$rtl/verilog/VDot.v:216$35 ($add) from unsigned to signed.
+Removed top 2 bits (of 20) from port A of cell VDot.$add$rtl/verilog/VDot.v:216$35 ($add).
+Removed top 2 bits (of 20) from port B of cell VDot.$add$rtl/verilog/VDot.v:216$35 ($add).
+Removed top 1 bits (of 20) from port Y of cell VDot.$add$rtl/verilog/VDot.v:216$35 ($add).
+Converting cell VDot.$add$rtl/verilog/VDot.v:240$36 ($add) from unsigned to signed.
+Removed top 3 bits (of 12) from port A of cell VDot.$add$rtl/verilog/VDot.v:240$36 ($add).
+Removed top 3 bits (of 12) from port B of cell VDot.$add$rtl/verilog/VDot.v:240$36 ($add).
+Removed top 2 bits (of 12) from port Y of cell VDot.$add$rtl/verilog/VDot.v:240$36 ($add).
+Converting cell VDot.$add$rtl/verilog/VDot.v:241$37 ($add) from unsigned to signed.
+Removed top 3 bits (of 12) from port A of cell VDot.$add$rtl/verilog/VDot.v:241$37 ($add).
+Removed top 3 bits (of 12) from port B of cell VDot.$add$rtl/verilog/VDot.v:241$37 ($add).
+Removed top 2 bits (of 12) from port Y of cell VDot.$add$rtl/verilog/VDot.v:241$37 ($add).
+Converting cell VDot.$add$rtl/verilog/VDot.v:242$38 ($add) from unsigned to signed.
+Removed top 3 bits (of 12) from port A of cell VDot.$add$rtl/verilog/VDot.v:242$38 ($add).
+Removed top 3 bits (of 12) from port B of cell VDot.$add$rtl/verilog/VDot.v:242$38 ($add).
+Removed top 2 bits (of 12) from port Y of cell VDot.$add$rtl/verilog/VDot.v:242$38 ($add).
+Converting cell VDot.$add$rtl/verilog/VDot.v:243$39 ($add) from unsigned to signed.
+Removed top 3 bits (of 12) from port A of cell VDot.$add$rtl/verilog/VDot.v:243$39 ($add).
+Removed top 3 bits (of 12) from port B of cell VDot.$add$rtl/verilog/VDot.v:243$39 ($add).
+Removed top 2 bits (of 12) from port Y of cell VDot.$add$rtl/verilog/VDot.v:243$39 ($add).
+Converting cell VDot.$add$rtl/verilog/VDot.v:244$40 ($add) from unsigned to signed.
+Removed top 2 bits (of 12) from port A of cell VDot.$add$rtl/verilog/VDot.v:244$40 ($add).
+Removed top 2 bits (of 12) from port B of cell VDot.$add$rtl/verilog/VDot.v:244$40 ($add).
+Removed top 1 bits (of 12) from port Y of cell VDot.$add$rtl/verilog/VDot.v:244$40 ($add).
+Converting cell VDot.$add$rtl/verilog/VDot.v:245$41 ($add) from unsigned to signed.
+Removed top 2 bits (of 12) from port A of cell VDot.$add$rtl/verilog/VDot.v:245$41 ($add).
+Removed top 2 bits (of 12) from port B of cell VDot.$add$rtl/verilog/VDot.v:245$41 ($add).
+Removed top 1 bits (of 12) from port Y of cell VDot.$add$rtl/verilog/VDot.v:245$41 ($add).
+Converting cell VDot.$add$rtl/verilog/VDot.v:246$42 ($add) from unsigned to signed.
+Removed top 1 bits (of 12) from port A of cell VDot.$add$rtl/verilog/VDot.v:246$42 ($add).
+Removed top 1 bits (of 12) from port B of cell VDot.$add$rtl/verilog/VDot.v:246$42 ($add).
+Converting cell VDot.$add$rtl/verilog/VDot.v:248$43 ($add) from unsigned to signed.
+Removed top 3 bits (of 12) from port A of cell VDot.$add$rtl/verilog/VDot.v:248$43 ($add).
+Removed top 3 bits (of 12) from port B of cell VDot.$add$rtl/verilog/VDot.v:248$43 ($add).
+Removed top 2 bits (of 12) from port Y of cell VDot.$add$rtl/verilog/VDot.v:248$43 ($add).
+Converting cell VDot.$add$rtl/verilog/VDot.v:249$44 ($add) from unsigned to signed.
+Removed top 3 bits (of 12) from port A of cell VDot.$add$rtl/verilog/VDot.v:249$44 ($add).
+Removed top 3 bits (of 12) from port B of cell VDot.$add$rtl/verilog/VDot.v:249$44 ($add).
+Removed top 2 bits (of 12) from port Y of cell VDot.$add$rtl/verilog/VDot.v:249$44 ($add).
+Converting cell VDot.$add$rtl/verilog/VDot.v:250$45 ($add) from unsigned to signed.
+Removed top 3 bits (of 12) from port A of cell VDot.$add$rtl/verilog/VDot.v:250$45 ($add).
+Removed top 3 bits (of 12) from port B of cell VDot.$add$rtl/verilog/VDot.v:250$45 ($add).
+Removed top 2 bits (of 12) from port Y of cell VDot.$add$rtl/verilog/VDot.v:250$45 ($add).
+Converting cell VDot.$add$rtl/verilog/VDot.v:251$46 ($add) from unsigned to signed.
+Removed top 3 bits (of 12) from port A of cell VDot.$add$rtl/verilog/VDot.v:251$46 ($add).
+Removed top 3 bits (of 12) from port B of cell VDot.$add$rtl/verilog/VDot.v:251$46 ($add).
+Removed top 2 bits (of 12) from port Y of cell VDot.$add$rtl/verilog/VDot.v:251$46 ($add).
+Converting cell VDot.$add$rtl/verilog/VDot.v:252$47 ($add) from unsigned to signed.
+Removed top 2 bits (of 12) from port A of cell VDot.$add$rtl/verilog/VDot.v:252$47 ($add).
+Removed top 2 bits (of 12) from port B of cell VDot.$add$rtl/verilog/VDot.v:252$47 ($add).
+Removed top 1 bits (of 12) from port Y of cell VDot.$add$rtl/verilog/VDot.v:252$47 ($add).
+Converting cell VDot.$add$rtl/verilog/VDot.v:253$48 ($add) from unsigned to signed.
+Removed top 2 bits (of 12) from port A of cell VDot.$add$rtl/verilog/VDot.v:253$48 ($add).
+Removed top 2 bits (of 12) from port B of cell VDot.$add$rtl/verilog/VDot.v:253$48 ($add).
+Removed top 1 bits (of 12) from port Y of cell VDot.$add$rtl/verilog/VDot.v:253$48 ($add).
+Converting cell VDot.$add$rtl/verilog/VDot.v:254$49 ($add) from unsigned to signed.
+Removed top 1 bits (of 12) from port A of cell VDot.$add$rtl/verilog/VDot.v:254$49 ($add).
+Removed top 1 bits (of 12) from port B of cell VDot.$add$rtl/verilog/VDot.v:254$49 ($add).
+Removed top 1 bits (of 2) from port B of cell VDot.$eq$rtl/verilog/VDot.v:150$78 ($eq).
+Removed top 1 bits (of 9) from port A of cell VDot.$neg$rtl/verilog/VDot.v:151$80 ($neg).
+Removed top 1 bits (of 2) from port B of cell VDot.$eq$rtl/verilog/VDot.v:150$83 ($eq).
+Removed top 1 bits (of 9) from port A of cell VDot.$neg$rtl/verilog/VDot.v:151$85 ($neg).
+Removed top 1 bits (of 2) from port B of cell VDot.$eq$rtl/verilog/VDot.v:150$88 ($eq).
+Removed top 1 bits (of 9) from port A of cell VDot.$neg$rtl/verilog/VDot.v:151$90 ($neg).
+Removed top 1 bits (of 2) from port B of cell VDot.$eq$rtl/verilog/VDot.v:150$93 ($eq).
+Removed top 1 bits (of 9) from port A of cell VDot.$neg$rtl/verilog/VDot.v:151$95 ($neg).
+Removed top 1 bits (of 2) from port B of cell VDot.$eq$rtl/verilog/VDot.v:150$98 ($eq).
+Removed top 1 bits (of 9) from port A of cell VDot.$neg$rtl/verilog/VDot.v:151$100 ($neg).
+Removed top 1 bits (of 2) from port B of cell VDot.$eq$rtl/verilog/VDot.v:150$103 ($eq).
+Removed top 1 bits (of 9) from port A of cell VDot.$neg$rtl/verilog/VDot.v:151$105 ($neg).
+Removed top 1 bits (of 2) from port B of cell VDot.$eq$rtl/verilog/VDot.v:150$108 ($eq).
+Removed top 1 bits (of 9) from port A of cell VDot.$neg$rtl/verilog/VDot.v:151$110 ($neg).
+Removed top 1 bits (of 2) from port B of cell VDot.$eq$rtl/verilog/VDot.v:150$113 ($eq).
+Removed top 1 bits (of 9) from port A of cell VDot.$neg$rtl/verilog/VDot.v:151$115 ($neg).
+Removed top 1 bits (of 2) from port B of cell VDot.$eq$rtl/verilog/VDot.v:150$118 ($eq).
+Removed top 1 bits (of 9) from port A of cell VDot.$neg$rtl/verilog/VDot.v:151$120 ($neg).
+Removed top 1 bits (of 2) from port B of cell VDot.$eq$rtl/verilog/VDot.v:150$123 ($eq).
+Removed top 1 bits (of 9) from port A of cell VDot.$neg$rtl/verilog/VDot.v:151$125 ($neg).
+Removed top 1 bits (of 2) from port B of cell VDot.$eq$rtl/verilog/VDot.v:150$128 ($eq).
+Removed top 1 bits (of 9) from port A of cell VDot.$neg$rtl/verilog/VDot.v:151$130 ($neg).
+Removed top 1 bits (of 2) from port B of cell VDot.$eq$rtl/verilog/VDot.v:150$133 ($eq).
+Removed top 1 bits (of 9) from port A of cell VDot.$neg$rtl/verilog/VDot.v:151$135 ($neg).
+Removed top 1 bits (of 2) from port B of cell VDot.$eq$rtl/verilog/VDot.v:150$138 ($eq).
+Removed top 1 bits (of 9) from port A of cell VDot.$neg$rtl/verilog/VDot.v:151$140 ($neg).
+Removed top 1 bits (of 2) from port B of cell VDot.$eq$rtl/verilog/VDot.v:150$143 ($eq).
+Removed top 1 bits (of 9) from port A of cell VDot.$neg$rtl/verilog/VDot.v:151$145 ($neg).
+Removed top 1 bits (of 2) from port B of cell VDot.$eq$rtl/verilog/VDot.v:150$148 ($eq).
+Removed top 1 bits (of 9) from port A of cell VDot.$neg$rtl/verilog/VDot.v:151$150 ($neg).
+Removed top 1 bits (of 2) from port B of cell VDot.$eq$rtl/verilog/VDot.v:150$153 ($eq).
+Removed top 1 bits (of 9) from port A of cell VDot.$neg$rtl/verilog/VDot.v:151$155 ($neg).
+Removed top 1 bits (of 2) from port B of cell VDot.$eq$rtl/verilog/VDot.v:163$158 ($eq).
+Removed top 1 bits (of 2) from port B of cell VDot.$procmux$240_CMP0 ($eq).
+Removed top 64 bits (of 128) from mux cell VDot.$procmux$239 ($pmux).
+Removed top 64 bits (of 128) from FF cell VDot.$auto$ff.cc:266:slice$430 ($sdff).
+Removed top 1 bits (of 20) from FF cell VDot.$auto$ff.cc:266:slice$424 ($sdff).
+Removed top 64 bits (of 128) from wire VDot.vd_c.
+
+2.10. Executing PEEPOPT pass (run peephole optimizers).
+
+2.11. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \VDot..
+Removed 0 unused cells and 1 unused wires.
+<suppressed ~1 debug messages>
+
+2.12. Executing ALUMACC pass (create $alu and $macc cells).
+Extracting $alu and $macc cells in module VDot:
+  creating $macc model for $add$rtl/verilog/VDot.v:210$29 ($add).
+  creating $macc model for $add$rtl/verilog/VDot.v:211$30 ($add).
+  creating $macc model for $add$rtl/verilog/VDot.v:212$31 ($add).
+  creating $macc model for $add$rtl/verilog/VDot.v:213$32 ($add).
+  creating $macc model for $add$rtl/verilog/VDot.v:214$33 ($add).
+  creating $macc model for $add$rtl/verilog/VDot.v:215$34 ($add).
+  creating $macc model for $add$rtl/verilog/VDot.v:216$35 ($add).
+  creating $macc model for $add$rtl/verilog/VDot.v:240$36 ($add).
+  creating $macc model for $add$rtl/verilog/VDot.v:241$37 ($add).
+  creating $macc model for $add$rtl/verilog/VDot.v:242$38 ($add).
+  creating $macc model for $add$rtl/verilog/VDot.v:243$39 ($add).
+  creating $macc model for $add$rtl/verilog/VDot.v:244$40 ($add).
+  creating $macc model for $add$rtl/verilog/VDot.v:245$41 ($add).
+  creating $macc model for $add$rtl/verilog/VDot.v:246$42 ($add).
+  creating $macc model for $add$rtl/verilog/VDot.v:248$43 ($add).
+  creating $macc model for $add$rtl/verilog/VDot.v:249$44 ($add).
+  creating $macc model for $add$rtl/verilog/VDot.v:250$45 ($add).
+  creating $macc model for $add$rtl/verilog/VDot.v:251$46 ($add).
+  creating $macc model for $add$rtl/verilog/VDot.v:252$47 ($add).
+  creating $macc model for $add$rtl/verilog/VDot.v:253$48 ($add).
+  creating $macc model for $add$rtl/verilog/VDot.v:254$49 ($add).
+  creating $macc model for $mul$rtl/verilog/VDot.v:114$54 ($mul).
+  creating $macc model for $mul$rtl/verilog/VDot.v:114$55 ($mul).
+  creating $macc model for $mul$rtl/verilog/VDot.v:114$56 ($mul).
+  creating $macc model for $mul$rtl/verilog/VDot.v:114$57 ($mul).
+  creating $macc model for $mul$rtl/verilog/VDot.v:114$58 ($mul).
+  creating $macc model for $mul$rtl/verilog/VDot.v:114$59 ($mul).
+  creating $macc model for $mul$rtl/verilog/VDot.v:114$60 ($mul).
+  creating $macc model for $mul$rtl/verilog/VDot.v:114$61 ($mul).
+  creating $macc model for $mul$rtl/verilog/VDot.v:131$62 ($mul).
+  creating $macc model for $mul$rtl/verilog/VDot.v:131$63 ($mul).
+  creating $macc model for $mul$rtl/verilog/VDot.v:131$64 ($mul).
+  creating $macc model for $mul$rtl/verilog/VDot.v:131$65 ($mul).
+  creating $macc model for $mul$rtl/verilog/VDot.v:131$66 ($mul).
+  creating $macc model for $mul$rtl/verilog/VDot.v:131$67 ($mul).
+  creating $macc model for $mul$rtl/verilog/VDot.v:131$68 ($mul).
+  creating $macc model for $mul$rtl/verilog/VDot.v:131$69 ($mul).
+  creating $macc model for $mul$rtl/verilog/VDot.v:131$70 ($mul).
+  creating $macc model for $mul$rtl/verilog/VDot.v:131$71 ($mul).
+  creating $macc model for $mul$rtl/verilog/VDot.v:131$72 ($mul).
+  creating $macc model for $mul$rtl/verilog/VDot.v:131$73 ($mul).
+  creating $macc model for $mul$rtl/verilog/VDot.v:131$74 ($mul).
+  creating $macc model for $mul$rtl/verilog/VDot.v:131$75 ($mul).
+  creating $macc model for $mul$rtl/verilog/VDot.v:131$76 ($mul).
+  creating $macc model for $mul$rtl/verilog/VDot.v:131$77 ($mul).
+  creating $macc model for $neg$rtl/verilog/VDot.v:151$100 ($neg).
+  creating $macc model for $neg$rtl/verilog/VDot.v:151$105 ($neg).
+  creating $macc model for $neg$rtl/verilog/VDot.v:151$110 ($neg).
+  creating $macc model for $neg$rtl/verilog/VDot.v:151$115 ($neg).
+  creating $macc model for $neg$rtl/verilog/VDot.v:151$120 ($neg).
+  creating $macc model for $neg$rtl/verilog/VDot.v:151$125 ($neg).
+  creating $macc model for $neg$rtl/verilog/VDot.v:151$130 ($neg).
+  creating $macc model for $neg$rtl/verilog/VDot.v:151$135 ($neg).
+  creating $macc model for $neg$rtl/verilog/VDot.v:151$140 ($neg).
+  creating $macc model for $neg$rtl/verilog/VDot.v:151$145 ($neg).
+  creating $macc model for $neg$rtl/verilog/VDot.v:151$150 ($neg).
+  creating $macc model for $neg$rtl/verilog/VDot.v:151$155 ($neg).
+  creating $macc model for $neg$rtl/verilog/VDot.v:151$80 ($neg).
+  creating $macc model for $neg$rtl/verilog/VDot.v:151$85 ($neg).
+  creating $macc model for $neg$rtl/verilog/VDot.v:151$90 ($neg).
+  creating $macc model for $neg$rtl/verilog/VDot.v:151$95 ($neg).
+  merging $macc model for $add$rtl/verilog/VDot.v:252$47 into $add$rtl/verilog/VDot.v:254$49.
+  merging $macc model for $add$rtl/verilog/VDot.v:248$43 into $add$rtl/verilog/VDot.v:254$49.
+  merging $macc model for $add$rtl/verilog/VDot.v:253$48 into $add$rtl/verilog/VDot.v:254$49.
+  merging $macc model for $add$rtl/verilog/VDot.v:250$45 into $add$rtl/verilog/VDot.v:254$49.
+  merging $macc model for $add$rtl/verilog/VDot.v:249$44 into $add$rtl/verilog/VDot.v:254$49.
+  merging $macc model for $add$rtl/verilog/VDot.v:251$46 into $add$rtl/verilog/VDot.v:254$49.
+  merging $macc model for $add$rtl/verilog/VDot.v:244$40 into $add$rtl/verilog/VDot.v:246$42.
+  merging $macc model for $add$rtl/verilog/VDot.v:240$36 into $add$rtl/verilog/VDot.v:246$42.
+  merging $macc model for $add$rtl/verilog/VDot.v:245$41 into $add$rtl/verilog/VDot.v:246$42.
+  merging $macc model for $add$rtl/verilog/VDot.v:242$38 into $add$rtl/verilog/VDot.v:246$42.
+  merging $macc model for $add$rtl/verilog/VDot.v:241$37 into $add$rtl/verilog/VDot.v:246$42.
+  merging $macc model for $add$rtl/verilog/VDot.v:243$39 into $add$rtl/verilog/VDot.v:246$42.
+  merging $macc model for $add$rtl/verilog/VDot.v:214$33 into $add$rtl/verilog/VDot.v:216$35.
+  merging $macc model for $add$rtl/verilog/VDot.v:210$29 into $add$rtl/verilog/VDot.v:216$35.
+  merging $macc model for $add$rtl/verilog/VDot.v:215$34 into $add$rtl/verilog/VDot.v:216$35.
+  merging $macc model for $add$rtl/verilog/VDot.v:212$31 into $add$rtl/verilog/VDot.v:216$35.
+  merging $macc model for $add$rtl/verilog/VDot.v:211$30 into $add$rtl/verilog/VDot.v:216$35.
+  merging $macc model for $add$rtl/verilog/VDot.v:213$32 into $add$rtl/verilog/VDot.v:216$35.
+  creating $macc cell for $mul$rtl/verilog/VDot.v:131$75: $auto$alumacc.cc:365:replace_macc$432
+  creating $macc cell for $mul$rtl/verilog/VDot.v:131$74: $auto$alumacc.cc:365:replace_macc$433
+  creating $macc cell for $mul$rtl/verilog/VDot.v:131$73: $auto$alumacc.cc:365:replace_macc$434
+  creating $macc cell for $mul$rtl/verilog/VDot.v:131$72: $auto$alumacc.cc:365:replace_macc$435
+  creating $macc cell for $mul$rtl/verilog/VDot.v:131$71: $auto$alumacc.cc:365:replace_macc$436
+  creating $macc cell for $mul$rtl/verilog/VDot.v:131$70: $auto$alumacc.cc:365:replace_macc$437
+  creating $macc cell for $mul$rtl/verilog/VDot.v:131$69: $auto$alumacc.cc:365:replace_macc$438
+  creating $macc cell for $mul$rtl/verilog/VDot.v:131$68: $auto$alumacc.cc:365:replace_macc$439
+  creating $macc cell for $mul$rtl/verilog/VDot.v:131$67: $auto$alumacc.cc:365:replace_macc$440
+  creating $macc cell for $mul$rtl/verilog/VDot.v:131$66: $auto$alumacc.cc:365:replace_macc$441
+  creating $macc cell for $mul$rtl/verilog/VDot.v:131$65: $auto$alumacc.cc:365:replace_macc$442
+  creating $macc cell for $mul$rtl/verilog/VDot.v:131$64: $auto$alumacc.cc:365:replace_macc$443
+  creating $macc cell for $mul$rtl/verilog/VDot.v:131$63: $auto$alumacc.cc:365:replace_macc$444
+  creating $macc cell for $mul$rtl/verilog/VDot.v:131$62: $auto$alumacc.cc:365:replace_macc$445
+  creating $macc cell for $mul$rtl/verilog/VDot.v:114$61: $auto$alumacc.cc:365:replace_macc$446
+  creating $macc cell for $mul$rtl/verilog/VDot.v:114$60: $auto$alumacc.cc:365:replace_macc$447
+  creating $macc cell for $mul$rtl/verilog/VDot.v:114$59: $auto$alumacc.cc:365:replace_macc$448
+  creating $macc cell for $mul$rtl/verilog/VDot.v:114$58: $auto$alumacc.cc:365:replace_macc$449
+  creating $macc cell for $mul$rtl/verilog/VDot.v:114$57: $auto$alumacc.cc:365:replace_macc$450
+  creating $macc cell for $mul$rtl/verilog/VDot.v:114$56: $auto$alumacc.cc:365:replace_macc$451
+  creating $macc cell for $mul$rtl/verilog/VDot.v:114$55: $auto$alumacc.cc:365:replace_macc$452
+  creating $macc cell for $mul$rtl/verilog/VDot.v:114$54: $auto$alumacc.cc:365:replace_macc$453
+  creating $macc cell for $add$rtl/verilog/VDot.v:254$49: $auto$alumacc.cc:365:replace_macc$454
+  creating $macc cell for $neg$rtl/verilog/VDot.v:151$100: $auto$alumacc.cc:365:replace_macc$455
+  creating $macc cell for $mul$rtl/verilog/VDot.v:131$76: $auto$alumacc.cc:365:replace_macc$456
+  creating $macc cell for $neg$rtl/verilog/VDot.v:151$115: $auto$alumacc.cc:365:replace_macc$457
+  creating $macc cell for $neg$rtl/verilog/VDot.v:151$105: $auto$alumacc.cc:365:replace_macc$458
+  creating $macc cell for $neg$rtl/verilog/VDot.v:151$110: $auto$alumacc.cc:365:replace_macc$459
+  creating $macc cell for $mul$rtl/verilog/VDot.v:131$77: $auto$alumacc.cc:365:replace_macc$460
+  creating $macc cell for $add$rtl/verilog/VDot.v:246$42: $auto$alumacc.cc:365:replace_macc$461
+  creating $macc cell for $neg$rtl/verilog/VDot.v:151$130: $auto$alumacc.cc:365:replace_macc$462
+  creating $macc cell for $neg$rtl/verilog/VDot.v:151$120: $auto$alumacc.cc:365:replace_macc$463
+  creating $macc cell for $neg$rtl/verilog/VDot.v:151$145: $auto$alumacc.cc:365:replace_macc$464
+  creating $macc cell for $neg$rtl/verilog/VDot.v:151$135: $auto$alumacc.cc:365:replace_macc$465
+  creating $macc cell for $neg$rtl/verilog/VDot.v:151$140: $auto$alumacc.cc:365:replace_macc$466
+  creating $macc cell for $neg$rtl/verilog/VDot.v:151$125: $auto$alumacc.cc:365:replace_macc$467
+  creating $macc cell for $add$rtl/verilog/VDot.v:216$35: $auto$alumacc.cc:365:replace_macc$468
+  creating $macc cell for $neg$rtl/verilog/VDot.v:151$80: $auto$alumacc.cc:365:replace_macc$469
+  creating $macc cell for $neg$rtl/verilog/VDot.v:151$150: $auto$alumacc.cc:365:replace_macc$470
+  creating $macc cell for $neg$rtl/verilog/VDot.v:151$95: $auto$alumacc.cc:365:replace_macc$471
+  creating $macc cell for $neg$rtl/verilog/VDot.v:151$85: $auto$alumacc.cc:365:replace_macc$472
+  creating $macc cell for $neg$rtl/verilog/VDot.v:151$90: $auto$alumacc.cc:365:replace_macc$473
+  creating $macc cell for $neg$rtl/verilog/VDot.v:151$155: $auto$alumacc.cc:365:replace_macc$474
+  created 0 $alu and 43 $macc cells.
+
+2.13. Executing SHARE pass (SAT-based resource sharing).
+
+2.14. Executing OPT pass (performing simple optimizations).
+
+2.14.1. Executing OPT_EXPR pass (perform const folding).
+Optimizing module VDot.
+
+2.14.2. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\VDot'.
+Removed a total of 0 cells.
+
+2.14.3. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module \VDot..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Removed 0 multiplexer ports.
+<suppressed ~17 debug messages>
+
+2.14.4. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module \VDot.
+Performed a total of 0 changes.
+
+2.14.5. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\VDot'.
+Removed a total of 0 cells.
+
+2.14.6. Executing OPT_DFF pass (perform DFF optimizations).
+
+2.14.7. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \VDot..
+Removed 18 unused cells and 0 unused wires.
+<suppressed ~18 debug messages>
+
+2.14.8. Executing OPT_EXPR pass (perform const folding).
+Optimizing module VDot.
+
+2.14.9. Rerunning OPT passes. (Maybe there is more to do..)
+
+2.14.10. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module \VDot..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Removed 0 multiplexer ports.
+<suppressed ~17 debug messages>
+
+2.14.11. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module \VDot.
+Performed a total of 0 changes.
+
+2.14.12. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\VDot'.
+Removed a total of 0 cells.
+
+2.14.13. Executing OPT_DFF pass (perform DFF optimizations).
+
+2.14.14. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \VDot..
+
+2.14.15. Executing OPT_EXPR pass (perform const folding).
+Optimizing module VDot.
+
+2.14.16. Finished OPT passes. (There is nothing left to do.)
+
+2.15. Executing MEMORY pass.
+
+2.15.1. Executing OPT_MEM pass (optimize memories).
+Performed a total of 0 transformations.
+
+2.15.2. Executing OPT_MEM_PRIORITY pass (removing unnecessary memory write priority relations).
+Performed a total of 0 transformations.
+
+2.15.3. Executing OPT_MEM_FEEDBACK pass (finding memory read-to-write feedback paths).
+
+2.15.4. Executing MEMORY_BMUX2ROM pass (converting muxes to ROMs).
+
+2.15.5. Executing MEMORY_DFF pass (merging $dff cells to $memrd).
+
+2.15.6. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \VDot..
+
+2.15.7. Executing MEMORY_SHARE pass (consolidating $memrd/$memwr cells).
+
+2.15.8. Executing OPT_MEM_WIDEN pass (optimize memories where all ports are wide).
+Performed a total of 0 transformations.
+
+2.15.9. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \VDot..
+
+2.15.10. Executing MEMORY_COLLECT pass (generating $mem cells).
+
+2.16. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \VDot..
+
+2.17. Executing OPT pass (performing simple optimizations).
+
+2.17.1. Executing OPT_EXPR pass (perform const folding).
+Optimizing module VDot.
+<suppressed ~86 debug messages>
+
+2.17.2. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\VDot'.
+Removed a total of 0 cells.
+
+2.17.3. Executing OPT_DFF pass (perform DFF optimizations).
+
+2.17.4. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \VDot..
+
+2.17.5. Finished fast OPT passes.
+
+2.18. Executing MEMORY_MAP pass (converting memories to logic and flip-flops).
+
+2.19. Executing OPT pass (performing simple optimizations).
+
+2.19.1. Executing OPT_EXPR pass (perform const folding).
+Optimizing module VDot.
+
+2.19.2. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\VDot'.
+Removed a total of 0 cells.
+
+2.19.3. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module \VDot..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Removed 0 multiplexer ports.
+<suppressed ~17 debug messages>
+
+2.19.4. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module \VDot.
+    Consolidated identical input bits for $pmux cell $procmux$239:
+      Old ports: A=64'0000000000000000000000000000000000000000000000000000000000000000, B={ 32'00000000000000000000000000000000 \s2_sum8 [18] \s2_sum8 [18] \s2_sum8 [18] \s2_sum8 [18] \s2_sum8 [18] \s2_sum8 [18] \s2_sum8 [18] \s2_sum8 [18] \s2_sum8 [18] \s2_sum8 [18] \s2_sum8 [18] \s2_sum8 [18] \s2_sum8 [18] \s2_sum8 [18:0] \s2_r1 [11] \s2_r1 [11] \s2_r1 [11] \s2_r1 [11] \s2_r1 [11] \s2_r1 [11] \s2_r1 [11] \s2_r1 [11] \s2_r1 [11] \s2_r1 [11] \s2_r1 [11] \s2_r1 [11] \s2_r1 [11] \s2_r1 [11] \s2_r1 [11] \s2_r1 [11] \s2_r1 [11] \s2_r1 [11] \s2_r1 [11] \s2_r1 [11] \s2_r1 \s2_r0 [11] \s2_r0 [11] \s2_r0 [11] \s2_r0 [11] \s2_r0 [11] \s2_r0 [11] \s2_r0 [11] \s2_r0 [11] \s2_r0 [11] \s2_r0 [11] \s2_r0 [11] \s2_r0 [11] \s2_r0 [11] \s2_r0 [11] \s2_r0 [11] \s2_r0 [11] \s2_r0 [11] \s2_r0 [11] \s2_r0 [11] \s2_r0 [11] \s2_r0 }, Y=\vd_c
+      New ports: A=31'0000000000000000000000000000000, B={ 12'000000000000 \s2_sum8 [18:0] \s2_r1 \s2_r0 [11] \s2_r0 [11] \s2_r0 [11] \s2_r0 [11] \s2_r0 [11] \s2_r0 [11] \s2_r0 [11] \s2_r0 }, Y={ \vd_c [43:32] \vd_c [18:0] }
+      New connections: { \vd_c [63:44] \vd_c [31:19] } = { \vd_c [43] \vd_c [43] \vd_c [43] \vd_c [43] \vd_c [43] \vd_c [43] \vd_c [43] \vd_c [43] \vd_c [43] \vd_c [43] \vd_c [43] \vd_c [43] \vd_c [43] \vd_c [43] \vd_c [43] \vd_c [43] \vd_c [43] \vd_c [43] \vd_c [43] \vd_c [43] \vd_c [18] \vd_c [18] \vd_c [18] \vd_c [18] \vd_c [18] \vd_c [18] \vd_c [18] \vd_c [18] \vd_c [18] \vd_c [18] \vd_c [18] \vd_c [18] \vd_c [18] }
+  Optimizing cells in module \VDot.
+Performed a total of 1 changes.
+
+2.19.5. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\VDot'.
+Removed a total of 0 cells.
+
+2.19.6. Executing OPT_SHARE pass.
+
+2.19.7. Executing OPT_DFF pass (perform DFF optimizations).
+
+2.19.8. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \VDot..
+
+2.19.9. Executing OPT_EXPR pass (perform const folding).
+Optimizing module VDot.
+
+2.19.10. Rerunning OPT passes. (Maybe there is more to do..)
+
+2.19.11. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module \VDot..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Removed 0 multiplexer ports.
+<suppressed ~17 debug messages>
+
+2.19.12. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module \VDot.
+Performed a total of 0 changes.
+
+2.19.13. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\VDot'.
+Removed a total of 0 cells.
+
+2.19.14. Executing OPT_SHARE pass.
+
+2.19.15. Executing OPT_DFF pass (perform DFF optimizations).
+
+2.19.16. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \VDot..
+
+2.19.17. Executing OPT_EXPR pass (perform const folding).
+Optimizing module VDot.
+
+2.19.18. Finished OPT passes. (There is nothing left to do.)
+
+2.20. Executing TECHMAP pass (map to technology primitives).
+
+2.20.1. Executing Verilog-2005 frontend: /home/dbqxxs/xsriscv/cieriscv/.tools/yosys/usr/bin/../share/yosys/techmap.v
+Parsing Verilog input from `/home/dbqxxs/xsriscv/cieriscv/.tools/yosys/usr/bin/../share/yosys/techmap.v' to AST representation.
+Generating RTLIL representation for module `\_90_simplemap_bool_ops'.
+Generating RTLIL representation for module `\_90_simplemap_reduce_ops'.
+Generating RTLIL representation for module `\_90_simplemap_logic_ops'.
+Generating RTLIL representation for module `\_90_simplemap_compare_ops'.
+Generating RTLIL representation for module `\_90_simplemap_various'.
+Generating RTLIL representation for module `\_90_simplemap_registers'.
+Generating RTLIL representation for module `\_90_shift_ops_shr_shl_sshl_sshr'.
+Generating RTLIL representation for module `\_90_shift_shiftx'.
+Generating RTLIL representation for module `\_90_fa'.
+Generating RTLIL representation for module `\_90_lcu_brent_kung'.
+Generating RTLIL representation for module `\_90_alu'.
+Generating RTLIL representation for module `\_90_macc'.
+Generating RTLIL representation for module `\_90_alumacc'.
+Generating RTLIL representation for module `\$__div_mod_u'.
+Generating RTLIL representation for module `\$__div_mod_trunc'.
+Generating RTLIL representation for module `\_90_div'.
+Generating RTLIL representation for module `\_90_mod'.
+Generating RTLIL representation for module `\$__div_mod_floor'.
+Generating RTLIL representation for module `\_90_divfloor'.
+Generating RTLIL representation for module `\_90_modfloor'.
+Generating RTLIL representation for module `\_90_pow'.
+Generating RTLIL representation for module `\_90_pmux'.
+Generating RTLIL representation for module `\_90_demux'.
+Generating RTLIL representation for module `\_90_lut'.
+Successfully finished Verilog frontend.
+
+2.20.2. Continuing TECHMAP pass.
+Using extmapper simplemap for cells of type $logic_not.
+Using extmapper simplemap for cells of type $logic_and.
+Using extmapper simplemap for cells of type $ne.
+Using extmapper maccmap for cells of type $macc_v2.
+  sub \in_vs1 [7:0] (8 bits, signed)
+  sub \in_vs1 [87:80] (8 bits, signed)
+  sub \in_vs1 [39:32] (8 bits, signed)
+Using extmapper simplemap for cells of type $sdff.
+  add \in_vs1 [55:52] * \in_vs2 [55:52] (4x4 bits, signed)
+  add \s1_dual9[8] (9 bits, signed)
+  add \s1_dual9[12] (9 bits, signed)
+  add \s1_dual9[10] (9 bits, signed)
+  add \s1_dual9[9] (9 bits, signed)
+  add \s1_dual9[14] (9 bits, signed)
+  add \s1_dual9[13] (9 bits, signed)
+  add \s1_dual9[11] (9 bits, signed)
+  add \s1_dual9[15] (9 bits, signed)
+  add \in_vs1 [7:0] * \in_vs2 [7:0] (8x8 bits, signed)
+  add \in_vs1 [15:8] * \in_vs2 [15:8] (8x8 bits, signed)
+  add \in_vs1 [23:16] * \in_vs2 [23:16] (8x8 bits, signed)
+  add \in_vs1 [31:24] * \in_vs2 [31:24] (8x8 bits, signed)
+  add \in_vs1 [39:32] * \in_vs2 [39:32] (8x8 bits, signed)
+  add \in_vs1 [47:40] * \in_vs2 [47:40] (8x8 bits, signed)
+  add \in_vs1 [55:48] * \in_vs2 [55:48] (8x8 bits, signed)
+  add \in_vs1 [63:56] * \in_vs2 [63:56] (8x8 bits, signed)
+  add \in_vs1 [3:0] * \in_vs2 [3:0] (4x4 bits, signed)
+  add \in_vs1 [7:4] * \in_vs2 [7:4] (4x4 bits, signed)
+  add \in_vs1 [11:8] * \in_vs2 [11:8] (4x4 bits, signed)
+  add \in_vs1 [15:12] * \in_vs2 [15:12] (4x4 bits, signed)
+  add \in_vs1 [19:16] * \in_vs2 [19:16] (4x4 bits, signed)
+  add \in_vs1 [23:20] * \in_vs2 [23:20] (4x4 bits, signed)
+  add \in_vs1 [27:24] * \in_vs2 [27:24] (4x4 bits, signed)
+  add \in_vs1 [31:28] * \in_vs2 [31:28] (4x4 bits, signed)
+  add \in_vs1 [35:32] * \in_vs2 [35:32] (4x4 bits, signed)
+  add \in_vs1 [39:36] * \in_vs2 [39:36] (4x4 bits, signed)
+  add \in_vs1 [43:40] * \in_vs2 [43:40] (4x4 bits, signed)
+  add \in_vs1 [47:44] * \in_vs2 [47:44] (4x4 bits, signed)
+  add \in_vs1 [51:48] * \in_vs2 [51:48] (4x4 bits, signed)
+  sub \in_vs1 [63:56] (8 bits, signed)
+  add \s1_dual9[0] (9 bits, signed)
+  add \s1_dual9[4] (9 bits, signed)
+  add \s1_dual9[2] (9 bits, signed)
+  add \s1_dual9[1] (9 bits, signed)
+  add \s1_dual9[6] (9 bits, signed)
+  add \s1_dual9[5] (9 bits, signed)
+  add \s1_dual9[3] (9 bits, signed)
+  add \s1_dual9[7] (9 bits, signed)
+Using extmapper simplemap for cells of type $eq.
+  sub \in_vs1 [119:112] (8 bits, signed)
+Using extmapper simplemap for cells of type $mux.
+  sub \in_vs1 [23:16] (8 bits, signed)
+  sub \in_vs1 [127:120] (8 bits, signed)
+  sub \in_vs1 [15:8] (8 bits, signed)
+  add \in_vs1 [59:56] * \in_vs2 [59:56] (4x4 bits, signed)
+  sub \in_vs1 [55:48] (8 bits, signed)
+  add \in_vs1 [63:60] * \in_vs2 [63:60] (4x4 bits, signed)
+  sub \in_vs1 [47:40] (8 bits, signed)
+  sub \in_vs1 [111:104] (8 bits, signed)
+  add \s1_prod8[0] (16 bits, signed)
+  add \s1_prod8[4] (16 bits, signed)
+  add \s1_prod8[2] (16 bits, signed)
+  add \s1_prod8[1] (16 bits, signed)
+  add \s1_prod8[6] (16 bits, signed)
+  add \s1_prod8[5] (16 bits, signed)
+  add \s1_prod8[3] (16 bits, signed)
+  add \s1_prod8[7] (16 bits, signed)
+  sub \in_vs1 [71:64] (8 bits, signed)
+  sub \in_vs1 [103:96] (8 bits, signed)
+  sub \in_vs1 [79:72] (8 bits, signed)
+  sub \in_vs1 [95:88] (8 bits, signed)
+  sub \in_vs1 [31:24] (8 bits, signed)
+Using extmapper simplemap for cells of type $reduce_or.
+Using template $paramod$f08cf4b531f7b2bd95251b79857dfb970a6679fc\_90_pmux for cells of type $pmux.
+Using extmapper simplemap for cells of type $and.
+Using template $paramod\_90_fa\WIDTH=32'00000000000000000000000000010000 for cells of type $fa.
+Using template $paramod$6df0329addda9228fcc2546de2aaf14ad26c98e1\_90_alu for cells of type $alu.
+Using extmapper simplemap for cells of type $not.
+Using template $paramod\_90_fa\WIDTH=32'00000000000000000000000000001100 for cells of type $fa.
+Using template $paramod$ee3d784672cdb1cb32d9a801a3af776716f16b74\_90_alu for cells of type $alu.
+Using template $paramod\_90_fa\WIDTH=32'00000000000000000000000000001000 for cells of type $fa.
+Using template $paramod$a1bc51c02ce12ac21eb18988e83292af48ed7d72\_90_alu for cells of type $alu.
+Using template $paramod$d2fa05d38998afabc6d4f34471305d0af4b8b2df\_90_alu for cells of type $alu.
+Using template $paramod\_90_fa\WIDTH=32'00000000000000000000000000010011 for cells of type $fa.
+Using template $paramod$4e6ee5eb737cf7428f8e246e911ae1dac9ae2979\_90_alu for cells of type $alu.
+Using extmapper simplemap for cells of type $or.
+Using extmapper simplemap for cells of type $xor.
+Using template $paramod\_90_lcu_brent_kung\WIDTH=32'00000000000000000000000000010000 for cells of type $lcu.
+Using extmapper simplemap for cells of type $pos.
+Using template $paramod\_90_lcu_brent_kung\WIDTH=32'00000000000000000000000000001100 for cells of type $lcu.
+Using template $paramod\_90_lcu_brent_kung\WIDTH=32'00000000000000000000000000001000 for cells of type $lcu.
+Using template $paramod\_90_lcu_brent_kung\WIDTH=32'00000000000000000000000000001001 for cells of type $lcu.
+Using template $paramod\_90_lcu_brent_kung\WIDTH=32'00000000000000000000000000010011 for cells of type $lcu.
+No more expansions possible.
+<suppressed ~3943 debug messages>
+
+2.21. Executing OPT pass (performing simple optimizations).
+
+2.21.1. Executing OPT_EXPR pass (perform const folding).
+Optimizing module VDot.
+<suppressed ~5358 debug messages>
+
+2.21.2. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\VDot'.
+<suppressed ~5493 debug messages>
+Removed a total of 1831 cells.
+
+2.21.3. Executing OPT_DFF pass (perform DFF optimizations).
+
+2.21.4. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \VDot..
+Removed 631 unused cells and 3329 unused wires.
+<suppressed ~632 debug messages>
+
+2.21.5. Finished fast OPT passes.
+
+2.22. Executing HIERARCHY pass (managing design hierarchy).
+Attribute `top' found on module `VDot'. Setting top module to VDot.
+
+2.22.1. Analyzing design hierarchy..
+Top module:  \VDot
+
+2.22.2. Analyzing design hierarchy..
+Top module:  \VDot
+Removed 0 unused modules.
+
+2.23. Printing statistics.
+
+=== VDot ===
+
+   Number of wires:               1660
+   Number of wire bits:          14375
+   Number of public wires:         249
+   Number of public wire bits:    2649
+   Number of ports:                 14
+   Number of port bits:            400
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:               7456
+     $_AND_                       2954
+     $_MUX_                        607
+     $_NOT_                        171
+     $_OR_                        1053
+     $_SDFF_PP0_                   356
+     $_XOR_                       2315
+
+2.24. Executing CHECK pass (checking for obvious problems).
+Checking module VDot...
+Found and reported 0 problems.
+
+3. Executing TECHMAP pass (map to technology primitives).
+
+3.1. Executing Verilog-2005 frontend: /home/dbqxxs/xsriscv/cieriscv/.tools/yosys/usr/bin/../share/yosys/techmap.v
+Parsing Verilog input from `/home/dbqxxs/xsriscv/cieriscv/.tools/yosys/usr/bin/../share/yosys/techmap.v' to AST representation.
+Generating RTLIL representation for module `\_90_simplemap_bool_ops'.
+Generating RTLIL representation for module `\_90_simplemap_reduce_ops'.
+Generating RTLIL representation for module `\_90_simplemap_logic_ops'.
+Generating RTLIL representation for module `\_90_simplemap_compare_ops'.
+Generating RTLIL representation for module `\_90_simplemap_various'.
+Generating RTLIL representation for module `\_90_simplemap_registers'.
+Generating RTLIL representation for module `\_90_shift_ops_shr_shl_sshl_sshr'.
+Generating RTLIL representation for module `\_90_shift_shiftx'.
+Generating RTLIL representation for module `\_90_fa'.
+Generating RTLIL representation for module `\_90_lcu_brent_kung'.
+Generating RTLIL representation for module `\_90_alu'.
+Generating RTLIL representation for module `\_90_macc'.
+Generating RTLIL representation for module `\_90_alumacc'.
+Generating RTLIL representation for module `\$__div_mod_u'.
+Generating RTLIL representation for module `\$__div_mod_trunc'.
+Generating RTLIL representation for module `\_90_div'.
+Generating RTLIL representation for module `\_90_mod'.
+Generating RTLIL representation for module `\$__div_mod_floor'.
+Generating RTLIL representation for module `\_90_divfloor'.
+Generating RTLIL representation for module `\_90_modfloor'.
+Generating RTLIL representation for module `\_90_pow'.
+Generating RTLIL representation for module `\_90_pmux'.
+Generating RTLIL representation for module `\_90_demux'.
+Generating RTLIL representation for module `\_90_lut'.
+Successfully finished Verilog frontend.
+
+3.2. Continuing TECHMAP pass.
+No more expansions possible.
+<suppressed ~75 debug messages>
+
+4. Executing OPT pass (performing simple optimizations).
+
+4.1. Executing OPT_EXPR pass (perform const folding).
+Optimizing module VDot.
+
+4.2. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\VDot'.
+Removed a total of 0 cells.
+
+4.3. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module \VDot..
+  Creating internal representation of mux trees.
+  No muxes found in this module.
+Removed 0 multiplexer ports.
+
+4.4. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module \VDot.
+Performed a total of 0 changes.
+
+4.5. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\VDot'.
+Removed a total of 0 cells.
+
+4.6. Executing OPT_DFF pass (perform DFF optimizations).
+Adding SRST signal on $auto$ff.cc:266:slice$2498 ($_SDFF_PP0_) from module VDot (D = $procmux$239.B_AND_S [30], Q = \out_vd [62], rval = 1'0).
+Adding SRST signal on $auto$ff.cc:266:slice$2478 ($_SDFF_PP0_) from module VDot (D = $procmux$239.B_AND_S [29], Q = \out_vd [42], rval = 1'0).
+Adding SRST signal on $auto$ff.cc:266:slice$2477 ($_SDFF_PP0_) from module VDot (D = $procmux$239.B_AND_S [28], Q = \out_vd [41], rval = 1'0).
+Adding SRST signal on $auto$ff.cc:266:slice$2476 ($_SDFF_PP0_) from module VDot (D = $procmux$239.B_AND_S [27], Q = \out_vd [40], rval = 1'0).
+Adding SRST signal on $auto$ff.cc:266:slice$2475 ($_SDFF_PP0_) from module VDot (D = $procmux$239.B_AND_S [26], Q = \out_vd [39], rval = 1'0).
+Adding SRST signal on $auto$ff.cc:266:slice$2474 ($_SDFF_PP0_) from module VDot (D = $procmux$239.B_AND_S [25], Q = \out_vd [38], rval = 1'0).
+Adding SRST signal on $auto$ff.cc:266:slice$2473 ($_SDFF_PP0_) from module VDot (D = $procmux$239.B_AND_S [24], Q = \out_vd [37], rval = 1'0).
+Adding SRST signal on $auto$ff.cc:266:slice$2472 ($_SDFF_PP0_) from module VDot (D = $procmux$239.B_AND_S [23], Q = \out_vd [36], rval = 1'0).
+Adding SRST signal on $auto$ff.cc:266:slice$2471 ($_SDFF_PP0_) from module VDot (D = $procmux$239.B_AND_S [22], Q = \out_vd [35], rval = 1'0).
+Adding SRST signal on $auto$ff.cc:266:slice$2470 ($_SDFF_PP0_) from module VDot (D = $procmux$239.B_AND_S [21], Q = \out_vd [34], rval = 1'0).
+Adding SRST signal on $auto$ff.cc:266:slice$2469 ($_SDFF_PP0_) from module VDot (D = $procmux$239.B_AND_S [20], Q = \out_vd [33], rval = 1'0).
+Adding SRST signal on $auto$ff.cc:266:slice$2468 ($_SDFF_PP0_) from module VDot (D = $procmux$239.B_AND_S [19], Q = \out_vd [32], rval = 1'0).
+Adding SRST signal on $auto$ff.cc:266:slice$2467 ($_SDFF_PP0_) from module VDot (D = $procmux$239.Y_B [18], Q = \out_vd [31], rval = 1'0).
+Adding SRST signal on $auto$ff.cc:266:slice$2453 ($_SDFF_PP0_) from module VDot (D = $procmux$239.Y_B [17], Q = \out_vd [17], rval = 1'0).
+Adding SRST signal on $auto$ff.cc:266:slice$2452 ($_SDFF_PP0_) from module VDot (D = $procmux$239.Y_B [16], Q = \out_vd [16], rval = 1'0).
+Adding SRST signal on $auto$ff.cc:266:slice$2451 ($_SDFF_PP0_) from module VDot (D = $procmux$239.Y_B [15], Q = \out_vd [15], rval = 1'0).
+Adding SRST signal on $auto$ff.cc:266:slice$2450 ($_SDFF_PP0_) from module VDot (D = $procmux$239.Y_B [14], Q = \out_vd [14], rval = 1'0).
+Adding SRST signal on $auto$ff.cc:266:slice$2449 ($_SDFF_PP0_) from module VDot (D = $procmux$239.Y_B [13], Q = \out_vd [13], rval = 1'0).
+Adding SRST signal on $auto$ff.cc:266:slice$2448 ($_SDFF_PP0_) from module VDot (D = $procmux$239.Y_B [12], Q = \out_vd [12], rval = 1'0).
+Adding SRST signal on $auto$ff.cc:266:slice$2447 ($_SDFF_PP0_) from module VDot (D = $procmux$239.Y_B [11], Q = \out_vd [11], rval = 1'0).
+Adding SRST signal on $auto$ff.cc:266:slice$2446 ($_SDFF_PP0_) from module VDot (D = $procmux$239.Y_B [10], Q = \out_vd [10], rval = 1'0).
+Adding SRST signal on $auto$ff.cc:266:slice$2445 ($_SDFF_PP0_) from module VDot (D = $procmux$239.Y_B [9], Q = \out_vd [9], rval = 1'0).
+Adding SRST signal on $auto$ff.cc:266:slice$2444 ($_SDFF_PP0_) from module VDot (D = $procmux$239.Y_B [8], Q = \out_vd [8], rval = 1'0).
+Adding SRST signal on $auto$ff.cc:266:slice$2443 ($_SDFF_PP0_) from module VDot (D = $procmux$239.Y_B [7], Q = \out_vd [7], rval = 1'0).
+Adding SRST signal on $auto$ff.cc:266:slice$2442 ($_SDFF_PP0_) from module VDot (D = $procmux$239.Y_B [6], Q = \out_vd [6], rval = 1'0).
+Adding SRST signal on $auto$ff.cc:266:slice$2441 ($_SDFF_PP0_) from module VDot (D = $procmux$239.Y_B [5], Q = \out_vd [5], rval = 1'0).
+Adding SRST signal on $auto$ff.cc:266:slice$2440 ($_SDFF_PP0_) from module VDot (D = $procmux$239.Y_B [4], Q = \out_vd [4], rval = 1'0).
+Adding SRST signal on $auto$ff.cc:266:slice$2439 ($_SDFF_PP0_) from module VDot (D = $procmux$239.Y_B [3], Q = \out_vd [3], rval = 1'0).
+Adding SRST signal on $auto$ff.cc:266:slice$2438 ($_SDFF_PP0_) from module VDot (D = $procmux$239.Y_B [2], Q = \out_vd [2], rval = 1'0).
+Adding SRST signal on $auto$ff.cc:266:slice$2437 ($_SDFF_PP0_) from module VDot (D = $procmux$239.Y_B [1], Q = \out_vd [1], rval = 1'0).
+Adding SRST signal on $auto$ff.cc:266:slice$2436 ($_SDFF_PP0_) from module VDot (D = $procmux$239.Y_B [0], Q = \out_vd [0], rval = 1'0).
+
+4.7. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \VDot..
+Removed 31 unused cells and 31 unused wires.
+<suppressed ~32 debug messages>
+
+4.8. Executing OPT_EXPR pass (perform const folding).
+Optimizing module VDot.
+
+4.9. Rerunning OPT passes. (Maybe there is more to do..)
+
+4.10. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module \VDot..
+  Creating internal representation of mux trees.
+  No muxes found in this module.
+Removed 0 multiplexer ports.
+
+4.11. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module \VDot.
+Performed a total of 0 changes.
+
+4.12. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\VDot'.
+<suppressed ~180 debug messages>
+Removed a total of 60 cells.
+
+4.13. Executing OPT_DFF pass (perform DFF optimizations).
+
+4.14. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \VDot..
+Removed 0 unused cells and 60 unused wires.
+<suppressed ~1 debug messages>
+
+4.15. Executing OPT_EXPR pass (perform const folding).
+Optimizing module VDot.
+
+4.16. Rerunning OPT passes. (Maybe there is more to do..)
+
+4.17. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module \VDot..
+  Creating internal representation of mux trees.
+  No muxes found in this module.
+Removed 0 multiplexer ports.
+
+4.18. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module \VDot.
+Performed a total of 0 changes.
+
+4.19. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\VDot'.
+Removed a total of 0 cells.
+
+4.20. Executing OPT_DFF pass (perform DFF optimizations).
+
+4.21. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \VDot..
+
+4.22. Executing OPT_EXPR pass (perform const folding).
+Optimizing module VDot.
+
+4.23. Finished OPT passes. (There is nothing left to do.)
+
+5. Executing SPLITNETS pass (splitting up multi-bit signals).
+
+6. Executing OPT pass (performing simple optimizations).
+
+6.1. Executing OPT_EXPR pass (perform const folding).
+Optimizing module VDot.
+
+6.2. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\VDot'.
+Removed a total of 0 cells.
+
+6.3. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module \VDot..
+  Creating internal representation of mux trees.
+  No muxes found in this module.
+Removed 0 multiplexer ports.
+
+6.4. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module \VDot.
+Performed a total of 0 changes.
+
+6.5. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\VDot'.
+Removed a total of 0 cells.
+
+6.6. Executing OPT_DFF pass (perform DFF optimizations).
+
+6.7. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \VDot..
+Removed 0 unused cells and 5255 unused wires.
+<suppressed ~30 debug messages>
+
+6.8. Executing OPT_EXPR pass (perform const folding).
+Optimizing module VDot.
+
+6.9. Rerunning OPT passes. (Maybe there is more to do..)
+
+6.10. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module \VDot..
+  Creating internal representation of mux trees.
+  No muxes found in this module.
+Removed 0 multiplexer ports.
+
+6.11. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module \VDot.
+Performed a total of 0 changes.
+
+6.12. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\VDot'.
+Removed a total of 0 cells.
+
+6.13. Executing OPT_DFF pass (perform DFF optimizations).
+
+6.14. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \VDot..
+Removed 0 unused cells and 35 unused wires.
+<suppressed ~35 debug messages>
+
+6.15. Executing OPT_EXPR pass (perform const folding).
+Optimizing module VDot.
+
+6.16. Rerunning OPT passes. (Maybe there is more to do..)
+
+6.17. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module \VDot..
+  Creating internal representation of mux trees.
+  No muxes found in this module.
+Removed 0 multiplexer ports.
+
+6.18. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module \VDot.
+Performed a total of 0 changes.
+
+6.19. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\VDot'.
+Removed a total of 0 cells.
+
+6.20. Executing OPT_DFF pass (perform DFF optimizations).
+
+6.21. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \VDot..
+
+6.22. Executing OPT_EXPR pass (perform const folding).
+Optimizing module VDot.
+
+6.23. Finished OPT passes. (There is nothing left to do.)
+
+7. Executing LTP pass (find longest path).
+
+Longest topological path in VDot (length=25):
+    0: \s1_prod8[1][1]
+    1: $auto$maccmap.cc:114:fulladd$1772.t1[1] (via $auto$simplemap.cc:83:simplemap_bitop$14192)
+    2: $auto$maccmap.cc:114:fulladd$1772.t3[1] (via $auto$simplemap.cc:83:simplemap_bitop$14154)
+    3: $auto$maccmap.cc:114:fulladd$1772.X[1] (via $auto$simplemap.cc:83:simplemap_bitop$14116)
+    4: $auto$maccmap.cc:114:fulladd$1778.t1[2] (via $auto$simplemap.cc:83:simplemap_bitop$14383)
+    5: $auto$maccmap.cc:114:fulladd$1778.t3[2] (via $auto$simplemap.cc:83:simplemap_bitop$14345)
+    6: $auto$maccmap.cc:114:fulladd$1778.X[2] (via $auto$simplemap.cc:83:simplemap_bitop$14307)
+    7: $auto$maccmap.cc:114:fulladd$1784.t1[3] (via $auto$simplemap.cc:83:simplemap_bitop$14574)
+    8: $auto$maccmap.cc:114:fulladd$1784.t3[3] (via $auto$simplemap.cc:83:simplemap_bitop$14536)
+    9: $auto$maccmap.cc:114:fulladd$1784.X[3] (via $auto$simplemap.cc:83:simplemap_bitop$14498)
+   10: $auto$maccmap.cc:114:fulladd$1787.t1[4] (via $auto$simplemap.cc:83:simplemap_bitop$14670)
+   11: $auto$maccmap.cc:114:fulladd$1787.t3[4] (via $auto$simplemap.cc:83:simplemap_bitop$14632)
+   12: $auto$maccmap.cc:114:fulladd$1787.X[4] (via $auto$simplemap.cc:83:simplemap_bitop$14594)
+   13: $auto$maccmap.cc:240:synth$1788.X[5] (via $auto$simplemap.cc:83:simplemap_bitop$14710)
+   14: $techmap$auto$maccmap.cc:240:synth$1788.lcu.$and$/home/dbqxxs/xsriscv/cieriscv/.tools/yosys/usr/bin/../share/yosys/techmap.v:240$14752_Y (via $auto$simplemap.cc:83:simplemap_bitop$16495)
+   15: $techmap$auto$maccmap.cc:240:synth$1788.lcu.$or$/home/dbqxxs/xsriscv/cieriscv/.tools/yosys/usr/bin/../share/yosys/techmap.v:240$14753_Y (via $auto$simplemap.cc:83:simplemap_bitop$16538)
+   16: $techmap$auto$maccmap.cc:240:synth$1788.lcu.$and$/home/dbqxxs/xsriscv/cieriscv/.tools/yosys/usr/bin/../share/yosys/techmap.v:240$14776_Y (via $auto$simplemap.cc:83:simplemap_bitop$16503)
+   17: $techmap$auto$maccmap.cc:240:synth$1788.lcu.$or$/home/dbqxxs/xsriscv/cieriscv/.tools/yosys/usr/bin/../share/yosys/techmap.v:240$14777_Y (via $auto$simplemap.cc:83:simplemap_bitop$16546)
+   18: $auto$maccmap.cc:240:synth$1788.CO[7] (via $auto$simplemap.cc:83:simplemap_bitop$16549)
+   19: $techmap$auto$maccmap.cc:240:synth$1788.lcu.$and$/home/dbqxxs/xsriscv/cieriscv/.tools/yosys/usr/bin/../share/yosys/techmap.v:248$14794_Y (via $auto$simplemap.cc:83:simplemap_bitop$16521)
+   20: $auto$maccmap.cc:240:synth$1788.CO[11] (via $auto$simplemap.cc:83:simplemap_bitop$16552)
+   21: $techmap$auto$maccmap.cc:240:synth$1788.lcu.$and$/home/dbqxxs/xsriscv/cieriscv/.tools/yosys/usr/bin/../share/yosys/techmap.v:248$14803_Y (via $auto$simplemap.cc:83:simplemap_bitop$16524)
+   22: $auto$maccmap.cc:240:synth$1788.CO[13] (via $auto$simplemap.cc:83:simplemap_bitop$16555)
+   23: $techmap$auto$maccmap.cc:240:synth$1788.lcu.$and$/home/dbqxxs/xsriscv/cieriscv/.tools/yosys/usr/bin/../share/yosys/techmap.v:248$14827_Y (via $auto$simplemap.cc:83:simplemap_bitop$16532)
+   24: $auto$maccmap.cc:240:synth$1788.CO[14] (via $auto$simplemap.cc:83:simplemap_bitop$16563)
+   25: \sum8[15] (via $auto$simplemap.cc:83:simplemap_bitop$14700)
+   ff: \s2_sum8[15] (via $auto$ff.cc:266:slice$2521)
+
+8. Printing statistics.
+
+=== VDot ===
+
+   Number of wires:               9087
+   Number of wire bits:           9087
+   Number of public wires:        2585
+   Number of public wire bits:    2585
+   Number of ports:                400
+   Number of port bits:            400
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:               7427
+     $_AND_                       2954
+     $_MUX_                        576
+     $_NOT_                        172
+     $_OR_                        1054
+     $_SDFF_PP0_                   356
+     $_XOR_                       2315
+
+Warnings: 17 unique messages, 17 total
+End of script. Logfile hash: 2755eae995, CPU: user 9.84s system 0.10s, MEM: 56.05 MB peak
+Yosys 0.52 (git sha1 fee39a3284c90249e1d9684cf6944ffbbcbb8f90)
+Time spent: 32% 27x opt_clean (3 sec), 26% 34x opt_expr (2 sec), ...

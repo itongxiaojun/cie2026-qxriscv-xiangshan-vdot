@@ -18,7 +18,7 @@
 - 阶段一：已闭环。`hello xiangshan, I am qxriscv, IP address: 192.168.0.168`，`HIT GOOD TRAP at pc = 0x80000020`；vadd 波形（8200–8360）逐 cycle 分析见 `docs/phase1/vadd_wave.md`，原始日志见 `docs/phase1/logs/`。
 - 阶段二：`vdot` 指令族（`vdot.vv` INT8、`vdot4x2.vv` INT4 打包双结果、`vtdot.vv` BitNet b1.58 三值双结果）语义与微架构设计（SEW=8、VLEN=128、K=8、ACC_W=20）、Verilog/Chisel RTL、正/负/边界 **3047 条用例**、1024 条背靠背流式测试，全部通过；行覆盖率 **55/55 = 100%**，Chisel 生成 RTL 同向量等价回归 **3047/3047**。
 - 阶段三：NEMU 扩展（3 文件、170 行补丁）、同一向量集 **3032 用例 / 4551 结果字** RTL↔NEMU 比对 0 mismatch、三模式边界自检（vl=0 不写回 + 4 类非法配置）、RVV 组合基线（INT8，6→1 数据通路 uop）跑通。
-- 阶段四：Verilator 严格 lint 0 告警；Yosys generic 综合 4186 单元 / 172 FF / 25 级 R2R / ≈5.3k–8.4k GE（**仅 INT8 单模式历史值**，三模式面积待综合）；`scripts/run_all.sh` 七步回归全绿。
+- 阶段四：Verilator 严格 lint 0 告警；Yosys generic 综合（2026-11-10 实跑）三模式 **7427 单元 / 356 FF / 25 级 R2R / ≈10.1k–15.8k GE**，INT8 单模式对照 4187 / 172 / 25 级（≈5.35k–8.38k GE）；关键路径深度与终点不变；`scripts/run_all.sh` 七步回归全绿。
 - 系统级（香山昆明湖 V2 emu + difftest）：`vdot` 指令族已集成进 VFEX0（`FuType.vdot`、译码 pattern、`VdotCfg`、`VDotUnit`），三模式 `VDotUnit` 与译码已通过 Scala 编译；INT8 定向用例 7/7（difftest 0 mismatch）、非法配置 5/5，日志见 `docs/phase2/logs/xs_emu_*.log`；INT4/三值 emu 重跑列为后续项。
 - 关键结论：数据通路指令数 6→1（结构事实）；动态指令数 89,294→78,701（−11.9%，实测，INT8）；**香山 emu 实测加速比 9.8×（对标量，8-lane 公平）/ 11.8×（对 RVV 组合基线，16-lane，属上界）**，口径为 `per_iter=(C_k−C_empty)/NITER`、NITER=2000；单元级 MAC/cycle = **8:16:16**（INT8/INT4/三值），三值路径零乘法器、权重相对 INT8 4× 压缩。
 

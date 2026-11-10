@@ -274,4 +274,4 @@ class VDot(implicit p: Parameters) extends VFu {
 | Q2 | `vd[1..]` 下标是元素还是位 | 输出布局 | A / D2（O1） |
 | Q3 | 昆明湖 V2 的 VFu 延迟约定（2 或 3 级） | 流水级数 | A / D7 |
 | Q4 | 是否能从 Decode 阶段抛 illegal（vtype 运行时可知？） | 异常实现方式 | A / D8 |
-| Q5 | 面积估算是否需要综合报告佐证 | 报告可信度 | **已关闭（D17，阶段四 T4.2/T4.3）**：已用 Yosys 0.52 generic 综合给出 4186 单元 / 172 FF / 25 级 R2R / ≈5.3k–8.4k GE，见 `docs/phase4/release_report.md`；该日志为迁移前历史证据（当前环境无 yosys，暂不可复跑），PDK 级 µm²/ns 列入 B4 待环境 |
+| Q5 | 面积估算是否需要综合报告佐证 | 报告可信度 | **已关闭（D17，阶段四 T4.2/T4.3，2026-11-10 更新）**：本机 `.tools/yosys`（0.52-2 deb 解包）实跑，三模式 **7427 单元 / 356 FF / 25 级 R2R / ≈10.1k–15.8k GE**；INT8 单模式对照 4187 单元 / 172 FF / 25 级，见 `docs/phase4/release_report.md` §3 与 `06_yosys_synth_3mode.log`。PDK 级 µm²/ns 列入 B4 待环境 |

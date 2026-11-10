@@ -15,7 +15,7 @@
 |---|---|
 | 工作区 | `/home/dbqxxs/xsriscv/cieriscv` |
 | 用户 | `dbqxxs`（属 sudo 组但无免密 sudo；Docker 29.4.0 可用，本次未使用） |
-| 工具链部署方式 | 全部解包到工作区 `.tools/`（JDK / mill / RISC-V GCC / Verilator），无需 root |
+| 工具链部署方式 | 全部解包到工作区 `.tools/`（JDK / mill / RISC-V GCC / Verilator / yosys），无需 root、不改系统目录 |
 | `xs-env` | **未安装官方镜像**；按 `OpenXiangShan/xs-env` 固定提交逐项手工等价部署（与旧机做法一致） |
 | 香山（XiangShan）源码 | **可用**：`build/xs-work/XiangShan`，commit `16ae9ddcda54fc9a2fddffad73174cf793ac7814` |
 | RISC-V 工具链 | **可用**：xPack `riscv-none-elf-gcc` 15.2.0 / objcopy 2.45（`.tools/riscv/bin`） |
@@ -49,7 +49,7 @@
 | RISC-V GCC | 可用 | xPack `riscv-none-elf-gcc` 15.2.0（`.tools/riscv`） | 阶段一裸机镜像 |
 | 香山源码 + emu | 可用 | `build/xs-work/XiangShan` @ `16ae9dd` | 阶段一运行与波形采集、后续香山内集成 |
 | NEMU | 可用 | `.tools/nemu`，commit `a683e0b` + `patches/nemu-vdot.patch` | NEMU 自测、协同仿真、基线计数 |
-| yosys | **缺失** | — | generic 综合**无法在本机复跑**（`docs/phase4/01_yosys_synth.log` 为历史证据） |
+| yosys | 可用 | 0.52-2（`yosys` + `yosys-abc` deb 解包到 `.tools/yosys`） | generic 综合、逻辑深度（`docs/phase4/06_yosys_synth_3mode.log`） |
 | Chisel 工具链 | 可用 | Chisel 6.6.0 + firtool 1.62.1（本地 coursier 缓存） | `rtl/chisel` 编译、elaboration 与 SystemVerilog 生成 |
 | PDK 库 / DC / Genus | **缺失** | — | 面积（µm²）与时序（ns）签核 |
 | GTKWave | **缺失** | — | 本次以 VCD + 自写脚本出图，未用 GUI |
@@ -255,7 +255,7 @@ make emu -j8 EMU_TRACE=fst JVM_XMX=12G
 | 程序结束 | 必须用 `nemu_trap`（`.word 0x0005006b`，`a0=0`）；`ebreak` 会 double trap |
 | 波形窗口 | 不限定 `-b/-e` 会生成 1.5 GB 级 VCD；本次限定 8200–8360 |
 | VCD 解析 | `$scope/$var/$upscope/$enddefinitions` 行首带空格，必须 `strip()` |
-| 仍缺工具 | yosys / PDK / sbt 未就位 → generic 综合与 PDK 签核仍不可复跑；Chisel 版已改用 mill + 缓存 firtool 编译（不依赖 sbt） |
+| 仍缺工具 | PDK / sbt 未就位 → PDK 面积与 ns 签核仍不可做；generic 综合已由 `.tools/yosys`（0.52-2）覆盖；Chisel 版已改用 mill + 缓存 firtool 编译（不依赖 sbt） |
 | xs-env | 非官方镜像的逐字节复现，仅为同版本组件的手工对齐 |
 
 ## 8. 关联文档

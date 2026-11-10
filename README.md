@@ -43,7 +43,7 @@
 | 香山 emu 定向用例（系统级） | **7 / 7**，difftest 0 mismatch | [xs_emu_vdot_directed.log](docs/phase2/logs/xs_emu_vdot_directed.log) |
 | 香山 emu 非法配置（系统级） | **5 / 5** 触发 illegal-instruction（程序内自检，见测试报告 §8.1） | [xs_emu_vdot_illegal.log](docs/phase2/logs/xs_emu_vdot_illegal.log) |
 | 香山 emu 实测加速比 | **9.8×**（对标量，8-lane 公平）/ **11.8×**（对 RVV 基线，16-lane，属上界），NITER=2000 | [perf_analysis.md](docs/phase3/perf_analysis.md) §6、`docs/phase2/logs/xs_emu_perf_*.log` |
-| generic 综合 | 4186 单元 / 172 FF；最长 R2R 路径 **25 级**（EX2 加法树）；**≈5.3k–8.4k GE**（**仅 INT8 单模式**） | [01_yosys_synth.log](docs/phase4/01_yosys_synth.log)（历史证据，当前环境无 yosys，暂不可复跑） |
+| generic 综合 | **三模式** 7427 单元 / 356 FF；最长 R2R **25 级**；**≈10.1k–15.8k GE**（INT8 单模式对照 4187 / 172 / 25 级，≈5.3k–8.4k GE） | [06_yosys_synth_3mode.log](docs/phase4/06_yosys_synth_3mode.log)、[05_yosys_synth_int8_recheck.log](docs/phase4/05_yosys_synth_int8_recheck.log)（本机 `.tools/yosys` 可复跑） |
 | 波形 | `docs/phase2/waveform/vdot_unit.vcd` | — |
 
 > **表述约束**：可以宣称"`vdot` 已在香山昆明湖 V2 的 `emu`（Verilator）+ difftest 环境集成验证，并取得实测加速比 9.8×（lane 公平）/11.8×（16-lane 上界）"。仍不得宣称：PDK 级面积/时序（无工艺库）、真实频率下的绝对性能、FPGA/流片结果；非法配置用例的 difftest 存在参考模型侧已知陷阱滞后，故用程序内自检（见 [测试报告 §8.1](docs/phase2/test_report.md)）。
@@ -57,7 +57,7 @@
 | Python 3.13 / gcc 14.2 / Make 4.4 | 可用 | 参考模型、向量、C 交叉比对 |
 | Verilator 5.034（`.tools/verilator`） | 可用 | 3047 条三模式单元回归、严格 lint |
 | NEMU（`.tools/nemu`，`a683e0b` + 补丁） | 可用 | 3032 条三模式自测、4551 字 RTL↔NEMU diff、基线计数 |
-| yosys | **缺失** | generic 综合**暂不可复跑**（保留历史日志） |
+| yosys | **可用**（0.52-2 deb 解包到 `.tools/yosys`） | 三模式 generic 综合、逻辑深度 |
 | RISC-V GCC（`.tools/riscv`） | **可用** | `riscv-none-elf-gcc` 15.2.0；阶段一裸机镜像 |
 | 香山源码 + emu（`build/xs-work/XiangShan`） | **可用** | 香山 `16ae9dd`；`build/emu` 已构建，阶段一 hello / vadd 波形已复跑 |
 | JDK / mill（`.tools/`） | **可用** | Temurin 21.0.13 / mill 0.12.3；香山 RTL 生成 |
@@ -208,11 +208,12 @@ python3 tests/run_nemu_baseline.py
 # 严格 lint（0 告警 0 错误为通过）
 .tools/verilator/bin/verilator --lint-only -Wall -Wno-DECLFILENAME rtl/verilog/VDot.v --top-module VDot
 
-# generic 综合评估（需 yosys；无 PDK 库，输出为工艺无关规模与逻辑深度）
-yosys -p "read_verilog -sv rtl/verilog/VDot.v; synth -top VDot -noabc; techmap; opt; ltp -noff; stat"
+# generic 综合评估（无 PDK 库，输出为工艺无关规模与逻辑深度）
+export PATH="$PWD/.tools/yosys/usr/bin:$PATH" YOSYS_DATDIR="$PWD/.tools/yosys/usr/share/yosys"
+yosys -p "read_verilog -sv rtl/verilog/VDot.v; synth -top VDot -noabc; techmap; opt; splitnets -ports; opt; ltp -noff; stat"
 ```
 
-预期：lint 无输出告警；**INT8 单模式历史综合** `Number of cells: 4186`、`Longest topological path ... (length=25)`。三模式版面积需在有 yosys 的环境复跑，不能沿用该数字。
+预期：lint 无输出告警；三模式综合 `Number of cells: 7427`、`$_SDFF_PP0_ 356`、`Longest topological path ... (length=25)`。INT8 单模式对照为 4187 单元 / 172 FF / 25 级。
 
 ## 版本锁定
 
@@ -224,7 +225,7 @@ yosys -p "read_verilog -sv rtl/verilog/VDot.v; synth -top VDot -noabc; techmap; 
 | RISC-V GCC | xPack `riscv-none-elf-gcc` 15.2.0 / objcopy 2.45（`.tools/riscv`） |
 | difftest 参考模型 | `ready-to-run/riscv64-nemu-interpreter-so`（626,696 B） |
 | NEMU | `a683e0b`（XiangShan 版源码）+ `patches/nemu-vdot.patch` |
-| Yosys | 0.52（旧环境 deb 本地解包；**当前环境未安装**，综合日志为历史证据，复跑需另行提供 yosys） |
+| Yosys | 0.52-2（Debian trixie deb 解包到 `.tools/yosys`，不装系统；`yosys` + `yosys-abc`） |
 | Verilator | 5.034（`.tools/verilator` 源码树，`--assert --trace`） |
 | g++ | Debian 14.2.0 |
 | Python | 3.13.5 |
